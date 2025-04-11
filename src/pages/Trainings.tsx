@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   BookOpen, 
@@ -19,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format, addDays, isBefore, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { NewTrainingDialog } from '@/components/trainings/NewTrainingDialog';
 
 // Tipos de dados
 interface Training {
@@ -205,9 +205,7 @@ const Trainings = () => {
           <Button variant="outline" className="flex items-center gap-2">
             <Search className="h-4 w-4" /> Buscar
           </Button>
-          <Button className="bg-safety-blue hover:bg-safety-blue/90 flex items-center gap-2">
-            <Plus className="h-4 w-4" /> Novo Treinamento
-          </Button>
+          <NewTrainingDialog />
         </div>
       </div>
 
