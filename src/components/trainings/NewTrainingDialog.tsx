@@ -31,7 +31,30 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { 
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { Users } from "lucide-react";
+
+// Sample employees data
+const employeesData = [
+  { id: "E001", name: "João Silva", role: "Eletricista" },
+  { id: "E002", name: "Maria Souza", role: "Técnico de Manutenção" },
+  { id: "E003", name: "Carlos Ferreira", role: "Operador de Produção" },
+  { id: "E004", name: "Ana Oliveira", role: "Brigadista" },
+  { id: "E005", name: "Pedro Santos", role: "Membro da CIPA" },
+  { id: "E006", name: "Fernanda Lima", role: "Engenheira de Segurança" },
+  { id: "E007", name: "Ricardo Gomes", role: "Supervisor de Produção" },
+  { id: "E008", name: "Juliana Costa", role: "Técnica de Segurança" },
+  { id: "E009", name: "Roberto Alves", role: "Operador de Empilhadeira" },
+  { id: "E010", name: "Patrícia Martins", role: "Assistente Administrativa" }
+];
 
 // NR options with descriptions
 const nrOptions = [
@@ -80,7 +103,8 @@ const formSchema = z.object({
   description: z.string().min(10, { message: "Descrição deve ter pelo menos 10 caracteres" }),
   duration: z.string().min(1, { message: "Duração é obrigatória" }),
   validity: z.string().min(1, { message: "Validade é obrigatória" }),
-  selectedNRs: z.array(z.string()).min(1, { message: "Selecione pelo menos uma NR" })
+  selectedNRs: z.array(z.string()).min(1, { message: "Selecione pelo menos uma NR" }),
+  selectedEmployees: z.array(z.string()).min(1, { message: "Selecione pelo menos um funcionário" })
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -93,7 +117,8 @@ export function NewTrainingDialog() {
       description: "",
       duration: "",
       validity: "365",
-      selectedNRs: []
+      selectedNRs: [],
+      selectedEmployees: []
     }
   });
 
@@ -106,14 +131,27 @@ export function NewTrainingDialog() {
       return nr ? nr.label : nrId;
     }).join(", ");
     
+    // Format employees for display
+    const selectedEmployeeCount = data.selectedEmployees.length;
+    const employeesText = selectedEmployeeCount > 1 ? 
+      `${selectedEmployeeCount} funcionários selecionados` : 
+      `1 funcionário selecionado`;
+    
     // Success message
     toast.success("Treinamento cadastrado com sucesso", {
-      description: `${data.title} (${selectedNRLabels}) foi adicionado ao catálogo.`
+      description: `${data.title} (${selectedNRLabels}) - ${employeesText}.`
     });
     
     // Reset form
     form.reset();
   };
+
+  // Get selected employees count for display
+  const selectedEmployeeIds = form.watch("selectedEmployees");
+  const selectedEmployeeCount = selectedEmployeeIds.length;
+  const selectedEmployeeText = selectedEmployeeCount === 0 
+    ? "Selecionar funcionários" 
+    : `${selectedEmployeeCount} funcionário${selectedEmployeeCount > 1 ? 's' : ''} selecionado${selectedEmployeeCount > 1 ? 's' : ''}`;
 
   return (
     <Dialog>
@@ -201,6 +239,52 @@ export function NewTrainingDialog() {
                 )}
               />
             </div>
+            
+            {/* Employee Selection */}
+            <FormField
+              control={form.control}
+              name="selectedEmployees"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Funcionários Participantes</FormLabel>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between">
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          <span>{selectedEmployeeText}</span>
+                        </div>
+                        <span>▼</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-[300px] max-h-[300px] overflow-y-auto">
+                      <DropdownMenuLabel>Selecione os funcionários</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {employeesData.map((employee) => (
+                        <DropdownMenuCheckboxItem
+                          key={employee.id}
+                          checked={field.value?.includes(employee.id)}
+                          onCheckedChange={(checked) => {
+                            const updatedSelection = checked
+                              ? [...field.value, employee.id]
+                              : field.value?.filter(
+                                  (value) => value !== employee.id
+                                );
+                            field.onChange(updatedSelection);
+                          }}
+                        >
+                          <div>
+                            <p className="font-medium">{employee.name}</p>
+                            <p className="text-xs text-muted-foreground">{employee.role}</p>
+                          </div>
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
             <FormField
               control={form.control}
