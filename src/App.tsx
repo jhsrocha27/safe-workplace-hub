@@ -8,6 +8,7 @@ import { AppLayout } from "./components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Documents from "./pages/Documents";
 import PPEManagement from "./pages/PPEManagement";
+import Accidents from "./pages/Accidents";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
           <Route path="/documentos" element={<AppLayout><Documents /></AppLayout>} />
           <Route path="/epis" element={<AppLayout><PPEManagement /></AppLayout>} />
+          <Route path="/acidentes" element={<AppLayout><Accidents /></AppLayout>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
