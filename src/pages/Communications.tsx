@@ -340,7 +340,7 @@ const Communications = () => {
                   <SelectValue placeholder="Filtrar por tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os tipos</SelectItem>
+                  <SelectItem value="todos-tipos">Todos os tipos</SelectItem>
                   <SelectItem value="anúncio">Anúncio</SelectItem>
                   <SelectItem value="notificação">Notificação</SelectItem>
                   <SelectItem value="alerta">Alerta</SelectItem>
@@ -358,7 +358,7 @@ const Communications = () => {
                   <SelectValue placeholder="Filtrar por status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os status</SelectItem>
+                  <SelectItem value="todos-status">Todos os status</SelectItem>
                   <SelectItem value="novo">Novo</SelectItem>
                   <SelectItem value="lido">Lido</SelectItem>
                   <SelectItem value="respondido">Respondido</SelectItem>
@@ -487,3 +487,4 @@ const Communications = () => {
 };
 
 export default Communications;
+
