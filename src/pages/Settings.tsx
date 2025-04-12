@@ -19,7 +19,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Settings as SettingsIcon, User, Bell, Shield, Lock, Building, FileText } from "lucide-react";
+import { Settings as SettingsIcon, User, Bell, Shield, Lock, Building, FileText, Users } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 const Settings = () => {
   const [companyInfo, setCompanyInfo] = useState({
@@ -58,6 +64,40 @@ const Settings = () => {
   });
 
   const [logLevel, setLogLevel] = useState("warning");
+
+  // State for employee management
+  const [employees, setEmployees] = useState([
+    { id: 1, name: "João Silva", position: "Engenheiro de Segurança", department: "Engenharia", status: "Ativo" },
+    { id: 2, name: "Maria Oliveira", position: "Técnico de Segurança", department: "Operações", status: "Ativo" },
+    { id: 3, name: "Carlos Pereira", position: "Técnico de Segurança", department: "Operações", status: "Férias" }
+  ]);
+  
+  const [openEmployeeDialog, setOpenEmployeeDialog] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [currentEmployee, setCurrentEmployee] = useState(null);
+
+  // Form schema for employee registration
+  const employeeFormSchema = z.object({
+    name: z.string().min(3, { message: "Nome deve ter pelo menos 3 caracteres" }),
+    email: z.string().email({ message: "Email inválido" }),
+    phone: z.string().min(8, { message: "Telefone inválido" }),
+    position: z.string().min(2, { message: "Cargo é obrigatório" }),
+    department: z.string().min(2, { message: "Departamento é obrigatório" }),
+    status: z.string().min(1, { message: "Status é obrigatório" }),
+  });
+
+  // Initialize form
+  const employeeForm = useForm<z.infer<typeof employeeFormSchema>>({
+    resolver: zodResolver(employeeFormSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      position: "",
+      department: "",
+      status: "Ativo",
+    },
+  });
 
   const handleSaveCompanyInfo = () => {
     toast({
@@ -101,6 +141,62 @@ const Settings = () => {
     });
   };
 
+  // Function to add or edit employee
+  const onEmployeeSubmit = (data: z.infer<typeof employeeFormSchema>) => {
+    if (isEditMode && currentEmployee) {
+      // Edit existing employee
+      const updatedEmployees = employees.map(emp => 
+        emp.id === currentEmployee.id ? { ...emp, ...data } : emp
+      );
+      setEmployees(updatedEmployees);
+      toast({
+        title: "Funcionário atualizado",
+        description: "Informações do funcionário atualizadas com sucesso.",
+      });
+    } else {
+      // Add new employee
+      const newEmployee = {
+        id: employees.length > 0 ? Math.max(...employees.map(e => e.id)) + 1 : 1,
+        ...data
+      };
+      setEmployees([...employees, newEmployee]);
+      toast({
+        title: "Funcionário adicionado",
+        description: "Novo funcionário cadastrado com sucesso.",
+      });
+    }
+    
+    // Reset and close form
+    setOpenEmployeeDialog(false);
+    setIsEditMode(false);
+    setCurrentEmployee(null);
+    employeeForm.reset();
+  };
+
+  // Function to open form for editing an employee
+  const handleEditEmployee = (employee) => {
+    setIsEditMode(true);
+    setCurrentEmployee(employee);
+    employeeForm.reset({
+      name: employee.name,
+      email: employee.email || "",
+      phone: employee.phone || "",
+      position: employee.position,
+      department: employee.department,
+      status: employee.status,
+    });
+    setOpenEmployeeDialog(true);
+  };
+
+  // Function to delete an employee
+  const handleDeleteEmployee = (id) => {
+    setEmployees(employees.filter(emp => emp.id !== id));
+    toast({
+      title: "Funcionário removido",
+      description: "Funcionário removido com sucesso.",
+    });
+  };
+
   return (
     <div className="container mx-auto py-6">
       <div className="flex items-center justify-between mb-6">
@@ -113,7 +209,7 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="empresa" className="w-full">
-        <TabsList className="grid grid-cols-3 md:grid-cols-6 mb-8">
+        <TabsList className="grid grid-cols-3 md:grid-cols-7 mb-8">
           <TabsTrigger value="empresa">
             <Building className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Empresa</span>
@@ -133,6 +229,10 @@ const Settings = () => {
           <TabsTrigger value="integracoes">
             <Shield className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Integrações</span>
+          </TabsTrigger>
+          <TabsTrigger value="funcionarios">
+            <Users className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Funcionários</span>
           </TabsTrigger>
           <TabsTrigger value="avancado">
             <FileText className="h-4 w-4 mr-2" />
@@ -500,6 +600,200 @@ const Settings = () => {
             <CardFooter>
               <Button onClick={handleSaveIntegrations}>Salvar Integrações</Button>
             </CardFooter>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="funcionarios">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Cadastro de Funcionários</CardTitle>
+                <CardDescription>
+                  Gerencie os funcionários da sua empresa
+                </CardDescription>
+              </div>
+              <Dialog open={openEmployeeDialog} onOpenChange={setOpenEmployeeDialog}>
+                <DialogTrigger asChild>
+                  <Button 
+                    onClick={() => {
+                      setIsEditMode(false);
+                      setCurrentEmployee(null);
+                      employeeForm.reset({
+                        name: "",
+                        email: "",
+                        phone: "",
+                        position: "",
+                        department: "",
+                        status: "Ativo",
+                      });
+                    }}
+                  >
+                    Adicionar Funcionário
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[525px]">
+                  <DialogHeader>
+                    <DialogTitle>{isEditMode ? "Editar Funcionário" : "Adicionar Funcionário"}</DialogTitle>
+                    <DialogDescription>
+                      {isEditMode 
+                        ? "Edite as informações do funcionário nos campos abaixo."
+                        : "Preencha os dados do novo funcionário nos campos abaixo."}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <Form {...employeeForm}>
+                    <form onSubmit={employeeForm.handleSubmit(onEmployeeSubmit)} className="space-y-4">
+                      <FormField
+                        control={employeeForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nome Completo</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Nome do funcionário" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={employeeForm.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Email" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={employeeForm.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Telefone</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Telefone" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={employeeForm.control}
+                          name="position"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Cargo</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Cargo" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={employeeForm.control}
+                          name="department"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Departamento</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Departamento" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <FormField
+                        control={employeeForm.control}
+                        name="status"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Status</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione o status" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="Ativo">Ativo</SelectItem>
+                                <SelectItem value="Inativo">Inativo</SelectItem>
+                                <SelectItem value="Férias">Férias</SelectItem>
+                                <SelectItem value="Licença">Licença</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <DialogFooter>
+                        <Button type="submit">{isEditMode ? "Salvar Alterações" : "Cadastrar Funcionário"}</Button>
+                      </DialogFooter>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="font-medium">Nome</TableHead>
+                      <TableHead className="font-medium">Cargo</TableHead>
+                      <TableHead className="font-medium">Departamento</TableHead>
+                      <TableHead className="font-medium">Status</TableHead>
+                      <TableHead className="font-medium text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {employees.map((employee) => (
+                      <TableRow key={employee.id}>
+                        <TableCell>{employee.name}</TableCell>
+                        <TableCell>{employee.position}</TableCell>
+                        <TableCell>{employee.department}</TableCell>
+                        <TableCell>
+                          <Badge variant={employee.status === "Ativo" ? "default" : "outline"}>
+                            {employee.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEditEmployee(employee)}
+                          >
+                            Editar
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => handleDeleteEmployee(employee.id)}
+                          >
+                            Excluir
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {employees.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-4">
+                          Nenhum funcionário cadastrado.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
           </Card>
         </TabsContent>
 
