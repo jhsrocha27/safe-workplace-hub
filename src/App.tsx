@@ -11,6 +11,7 @@ import PPEManagement from "./pages/PPEManagement";
 import Accidents from "./pages/Accidents";
 import Trainings from "./pages/Trainings";
 import Inspections from "./pages/Inspections";
+import Communications from "./pages/Communications";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/treinamentos" element={<AppLayout><Trainings /></AppLayout>} />
           <Route path="/acidentes" element={<AppLayout><Accidents /></AppLayout>} />
           <Route path="/inspecoes" element={<AppLayout><Inspections /></AppLayout>} />
+          <Route path="/comunicacoes" element={<AppLayout><Communications /></AppLayout>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
