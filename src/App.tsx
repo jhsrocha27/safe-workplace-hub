@@ -10,6 +10,7 @@ import Documents from "./pages/Documents";
 import PPEManagement from "./pages/PPEManagement";
 import Accidents from "./pages/Accidents";
 import Trainings from "./pages/Trainings";
+import Inspections from "./pages/Inspections";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/epis" element={<AppLayout><PPEManagement /></AppLayout>} />
           <Route path="/treinamentos" element={<AppLayout><Trainings /></AppLayout>} />
           <Route path="/acidentes" element={<AppLayout><Accidents /></AppLayout>} />
+          <Route path="/inspecoes" element={<AppLayout><Inspections /></AppLayout>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
