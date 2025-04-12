@@ -1,0 +1,563 @@
+
+import React, { useState } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "@/hooks/use-toast";
+import { Settings as SettingsIcon, User, Bell, Shield, Lock, Building, FileText } from "lucide-react";
+
+const Settings = () => {
+  const [companyInfo, setCompanyInfo] = useState({
+    name: "SafeWork Engenharia",
+    cnpj: "12.345.678/0001-90",
+    address: "Av. Paulista, 1000, São Paulo, SP",
+    phone: "(11) 98765-4321",
+    email: "contato@safework.com.br",
+    website: "www.safework.com.br"
+  });
+
+  const [notifications, setNotifications] = useState({
+    email: true,
+    sms: false,
+    push: true,
+    accidents: true,
+    inspections: true,
+    trainings: true,
+    documents: true
+  });
+
+  const [securitySettings, setSecuritySettings] = useState({
+    twoFactor: false,
+    passwordExpiry: "90",
+    minPasswordLength: "8",
+    requireSpecialChars: true
+  });
+
+  const [theme, setTheme] = useState("light");
+
+  const [integrationsEnabled, setIntegrationsEnabled] = useState({
+    email: true,
+    calendar: true,
+    sms: false,
+    erp: false
+  });
+
+  const [logLevel, setLogLevel] = useState("warning");
+
+  const handleSaveCompanyInfo = () => {
+    toast({
+      title: "Informações da empresa atualizadas",
+      description: "As informações da empresa foram atualizadas com sucesso.",
+    });
+  };
+
+  const handleSaveNotifications = () => {
+    toast({
+      title: "Configurações de notificação atualizadas",
+      description: "Suas preferências de notificação foram atualizadas com sucesso.",
+    });
+  };
+
+  const handleSaveSecurity = () => {
+    toast({
+      title: "Configurações de segurança atualizadas",
+      description: "Suas configurações de segurança foram atualizadas com sucesso.",
+    });
+  };
+
+  const handleSaveAppearance = () => {
+    toast({
+      title: "Aparência atualizada",
+      description: `Tema alterado para ${theme === 'light' ? 'claro' : 'escuro'}.`,
+    });
+  };
+
+  const handleSaveIntegrations = () => {
+    toast({
+      title: "Integrações atualizadas",
+      description: "Suas configurações de integrações foram atualizadas com sucesso.",
+    });
+  };
+
+  const handleSaveAdvanced = () => {
+    toast({
+      title: "Configurações avançadas atualizadas",
+      description: "Suas configurações avançadas foram atualizadas com sucesso.",
+    });
+  };
+
+  return (
+    <div className="container mx-auto py-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
+          <p className="text-muted-foreground">
+            Gerencie as configurações do sistema SafeWork
+          </p>
+        </div>
+      </div>
+
+      <Tabs defaultValue="empresa" className="w-full">
+        <TabsList className="grid grid-cols-3 md:grid-cols-6 mb-8">
+          <TabsTrigger value="empresa">
+            <Building className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Empresa</span>
+          </TabsTrigger>
+          <TabsTrigger value="notificacoes">
+            <Bell className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Notificações</span>
+          </TabsTrigger>
+          <TabsTrigger value="seguranca">
+            <Lock className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Segurança</span>
+          </TabsTrigger>
+          <TabsTrigger value="aparencia">
+            <User className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Aparência</span>
+          </TabsTrigger>
+          <TabsTrigger value="integracoes">
+            <Shield className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Integrações</span>
+          </TabsTrigger>
+          <TabsTrigger value="avancado">
+            <FileText className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Avançado</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="empresa">
+          <Card>
+            <CardHeader>
+              <CardTitle>Informações da Empresa</CardTitle>
+              <CardDescription>
+                Gerencie as informações básicas da sua empresa
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="company-name">Nome da Empresa</Label>
+                  <Input 
+                    id="company-name" 
+                    value={companyInfo.name}
+                    onChange={(e) => setCompanyInfo({...companyInfo, name: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="company-cnpj">CNPJ</Label>
+                  <Input 
+                    id="company-cnpj" 
+                    value={companyInfo.cnpj}
+                    onChange={(e) => setCompanyInfo({...companyInfo, cnpj: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="company-address">Endereço</Label>
+                  <Input 
+                    id="company-address" 
+                    value={companyInfo.address}
+                    onChange={(e) => setCompanyInfo({...companyInfo, address: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="company-phone">Telefone</Label>
+                  <Input 
+                    id="company-phone" 
+                    value={companyInfo.phone}
+                    onChange={(e) => setCompanyInfo({...companyInfo, phone: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="company-email">Email</Label>
+                  <Input 
+                    id="company-email" 
+                    value={companyInfo.email}
+                    onChange={(e) => setCompanyInfo({...companyInfo, email: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="company-website">Website</Label>
+                  <Input 
+                    id="company-website" 
+                    value={companyInfo.website}
+                    onChange={(e) => setCompanyInfo({...companyInfo, website: e.target.value})}
+                  />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={handleSaveCompanyInfo}>Salvar Alterações</Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="notificacoes">
+          <Card>
+            <CardHeader>
+              <CardTitle>Preferências de Notificação</CardTitle>
+              <CardDescription>
+                Configure como e quando deseja receber notificações
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <h3 className="text-lg font-medium mb-2">Canais de Notificação</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="email-notifications"
+                      checked={notifications.email}
+                      onCheckedChange={(checked) => setNotifications({...notifications, email: checked})}
+                    />
+                    <Label htmlFor="email-notifications">Notificações por Email</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="sms-notifications"
+                      checked={notifications.sms}
+                      onCheckedChange={(checked) => setNotifications({...notifications, sms: checked})}
+                    />
+                    <Label htmlFor="sms-notifications">Notificações por SMS</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="push-notifications"
+                      checked={notifications.push}
+                      onCheckedChange={(checked) => setNotifications({...notifications, push: checked})}
+                    />
+                    <Label htmlFor="push-notifications">Notificações Push</Label>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div>
+                <h3 className="text-lg font-medium mb-2">Tipos de Notificação</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="accident-notifications" 
+                      checked={notifications.accidents}
+                      onCheckedChange={(checked) => 
+                        setNotifications({...notifications, accidents: checked === true})}
+                    />
+                    <Label htmlFor="accident-notifications">Acidentes</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="inspection-notifications"
+                      checked={notifications.inspections}
+                      onCheckedChange={(checked) => 
+                        setNotifications({...notifications, inspections: checked === true})}
+                    />
+                    <Label htmlFor="inspection-notifications">Inspeções</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="training-notifications"
+                      checked={notifications.trainings}
+                      onCheckedChange={(checked) => 
+                        setNotifications({...notifications, trainings: checked === true})}
+                    />
+                    <Label htmlFor="training-notifications">Treinamentos</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="document-notifications"
+                      checked={notifications.documents}
+                      onCheckedChange={(checked) => 
+                        setNotifications({...notifications, documents: checked === true})}
+                    />
+                    <Label htmlFor="document-notifications">Documentos</Label>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={handleSaveNotifications}>Salvar Preferências</Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="seguranca">
+          <Card>
+            <CardHeader>
+              <CardTitle>Configurações de Segurança</CardTitle>
+              <CardDescription>
+                Configure as opções de segurança e autenticação
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  id="two-factor"
+                  checked={securitySettings.twoFactor}
+                  onCheckedChange={(checked) => setSecuritySettings({...securitySettings, twoFactor: checked})}
+                />
+                <div>
+                  <Label htmlFor="two-factor">Autenticação em Dois Fatores</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Adicione uma camada extra de segurança à sua conta
+                  </p>
+                </div>
+              </div>
+              
+              <Separator className="my-4" />
+              
+              <div>
+                <h3 className="text-lg font-medium mb-2">Política de Senhas</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="password-expiry">Expiração de Senha (dias)</Label>
+                    <Input 
+                      id="password-expiry"
+                      type="number"
+                      value={securitySettings.passwordExpiry}
+                      onChange={(e) => setSecuritySettings({...securitySettings, passwordExpiry: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="min-password">Comprimento Mínimo da Senha</Label>
+                    <Input 
+                      id="min-password"
+                      type="number"
+                      value={securitySettings.minPasswordLength}
+                      onChange={(e) => setSecuritySettings({...securitySettings, minPasswordLength: e.target.value})}
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2 md:col-span-2">
+                    <Checkbox 
+                      id="special-chars"
+                      checked={securitySettings.requireSpecialChars}
+                      onCheckedChange={(checked) => 
+                        setSecuritySettings({...securitySettings, requireSpecialChars: checked === true})}
+                    />
+                    <Label htmlFor="special-chars">Exigir caracteres especiais na senha</Label>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={handleSaveSecurity}>Salvar Configurações</Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="aparencia">
+          <Card>
+            <CardHeader>
+              <CardTitle>Aparência</CardTitle>
+              <CardDescription>
+                Personalize a aparência da sua interface
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Tema</Label>
+                <div className="flex space-x-2">
+                  <Button 
+                    variant={theme === "light" ? "default" : "outline"} 
+                    onClick={() => setTheme("light")}
+                    className="flex-1"
+                  >
+                    Claro
+                  </Button>
+                  <Button 
+                    variant={theme === "dark" ? "default" : "outline"}
+                    onClick={() => setTheme("dark")}
+                    className="flex-1"
+                  >
+                    Escuro
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={handleSaveAppearance}>Salvar Preferências</Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="integracoes">
+          <Card>
+            <CardHeader>
+              <CardTitle>Integrações</CardTitle>
+              <CardDescription>
+                Gerencie as integrações com outros sistemas e serviços
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="border rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="flex items-center gap-2">
+                      <Bell className="h-5 w-5" />
+                      <h3 className="font-medium">Servidor de Email</h3>
+                    </div>
+                    <Badge variant={integrationsEnabled.email ? "default" : "outline"}>
+                      {integrationsEnabled.email ? "Ativo" : "Inativo"}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Integração com servidor SMTP para envio de notificações por email
+                  </p>
+                  <div className="flex justify-between items-center">
+                    <Button variant="outline" size="sm">Configurar</Button>
+                    <Switch 
+                      checked={integrationsEnabled.email}
+                      onCheckedChange={(checked) => 
+                        setIntegrationsEnabled({...integrationsEnabled, email: checked})}
+                    />
+                  </div>
+                </div>
+
+                <div className="border rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      <h3 className="font-medium">Google Calendar</h3>
+                    </div>
+                    <Badge variant={integrationsEnabled.calendar ? "default" : "outline"}>
+                      {integrationsEnabled.calendar ? "Ativo" : "Inativo"}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Sincronize eventos e lembretes com o Google Calendar
+                  </p>
+                  <div className="flex justify-between items-center">
+                    <Button variant="outline" size="sm">Configurar</Button>
+                    <Switch 
+                      checked={integrationsEnabled.calendar}
+                      onCheckedChange={(checked) => 
+                        setIntegrationsEnabled({...integrationsEnabled, calendar: checked})}
+                    />
+                  </div>
+                </div>
+
+                <div className="border rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="flex items-center gap-2">
+                      <Bell className="h-5 w-5" />
+                      <h3 className="font-medium">SMS Gateway</h3>
+                    </div>
+                    <Badge variant={integrationsEnabled.sms ? "default" : "outline"}>
+                      {integrationsEnabled.sms ? "Ativo" : "Inativo"}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Integração para envio de notificações via SMS
+                  </p>
+                  <div className="flex justify-between items-center">
+                    <Button variant="outline" size="sm">Configurar</Button>
+                    <Switch 
+                      checked={integrationsEnabled.sms}
+                      onCheckedChange={(checked) => 
+                        setIntegrationsEnabled({...integrationsEnabled, sms: checked})}
+                    />
+                  </div>
+                </div>
+
+                <div className="border rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="flex items-center gap-2">
+                      <Building className="h-5 w-5" />
+                      <h3 className="font-medium">Sistema ERP</h3>
+                    </div>
+                    <Badge variant={integrationsEnabled.erp ? "default" : "outline"}>
+                      {integrationsEnabled.erp ? "Ativo" : "Inativo"}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Integre com seu sistema ERP para sincronizar dados
+                  </p>
+                  <div className="flex justify-between items-center">
+                    <Button variant="outline" size="sm">Configurar</Button>
+                    <Switch 
+                      checked={integrationsEnabled.erp}
+                      onCheckedChange={(checked) => 
+                        setIntegrationsEnabled({...integrationsEnabled, erp: checked})}
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={handleSaveIntegrations}>Salvar Integrações</Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="avancado">
+          <Card>
+            <CardHeader>
+              <CardTitle>Configurações Avançadas</CardTitle>
+              <CardDescription>
+                Configure opções avançadas do sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="log-level">Nível de Log</Label>
+                <Select 
+                  value={logLevel}
+                  onValueChange={(value) => setLogLevel(value)}
+                >
+                  <SelectTrigger id="log-level" className="w-full">
+                    <SelectValue placeholder="Selecione o nível de log" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="error">Apenas Erros</SelectItem>
+                    <SelectItem value="warning">Avisos e Erros</SelectItem>
+                    <SelectItem value="info">Informações</SelectItem>
+                    <SelectItem value="debug">Debug</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="custom-css">CSS Personalizado</Label>
+                <Textarea 
+                  id="custom-css" 
+                  placeholder="Insira CSS personalizado aqui" 
+                  className="min-h-[100px]"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">Redefinir Sistema</h3>
+                <p className="text-sm text-muted-foreground">
+                  Cuidado: Estas ações são irreversíveis
+                </p>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button variant="outline">Limpar Cache</Button>
+                  <Button variant="destructive">Redefinir para Padrões</Button>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={handleSaveAdvanced}>Salvar Configurações</Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default Settings;

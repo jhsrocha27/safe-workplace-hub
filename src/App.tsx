@@ -12,6 +12,7 @@ import Accidents from "./pages/Accidents";
 import Trainings from "./pages/Trainings";
 import Inspections from "./pages/Inspections";
 import Communications from "./pages/Communications";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/acidentes" element={<AppLayout><Accidents /></AppLayout>} />
           <Route path="/inspecoes" element={<AppLayout><Inspections /></AppLayout>} />
           <Route path="/comunicacoes" element={<AppLayout><Communications /></AppLayout>} />
+          <Route path="/configuracoes" element={<AppLayout><Settings /></AppLayout>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
