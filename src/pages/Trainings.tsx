@@ -19,6 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { format, addDays, isBefore, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { NewTrainingDialog } from '@/components/trainings/NewTrainingDialog';
+import { ScheduleTrainingRecycleDialog } from '@/components/trainings/ScheduleTrainingRecycleDialog';
 
 // Tipos de dados
 interface Training {
@@ -294,9 +295,10 @@ const Trainings = () => {
                     <TableCell>{formatDate(training.expirationDate)}</TableCell>
                     <TableCell>{getStatusBadge(training.status)}</TableCell>
                     <TableCell>
-                      <Button variant="outline" size="sm">
-                        Agendar Reciclagem
-                      </Button>
+                      <ScheduleTrainingRecycleDialog 
+                        employeeName={training.employeeName}
+                        trainingTitle={training.trainingTitle} 
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
