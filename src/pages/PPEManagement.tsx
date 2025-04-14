@@ -18,7 +18,11 @@ import {
   UserCheck,
   Calendar,
   FileCheck,
-  ArrowUpDown
+  ArrowUpDown,
+  Download,
+  Info,
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -28,6 +32,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -36,6 +41,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { PPEDetailDialog } from '@/components/ppe/PPEDetailDialog';
+import { PPERenewalDialog } from '@/components/ppe/PPERenewalDialog';
 
 interface PPEItem {
   id: number;
@@ -79,6 +97,11 @@ const ppeDeliveryData: PPEDelivery[] = [
 const PPEManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentTab, setCurrentTab] = useState('deliveries');
+  const [selectedDelivery, setSelectedDelivery] = useState<PPEDelivery | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [renewalDialogOpen, setRenewalDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   const filteredDeliveries = ppeDeliveryData.filter(delivery => {
     return delivery.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -91,6 +114,48 @@ const PPEManagement = () => {
       item.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.ca.toLowerCase().includes(searchTerm.toLowerCase());
   });
+
+  const handleShowDetails = (delivery: PPEDelivery) => {
+    setSelectedDelivery(delivery);
+    setDetailDialogOpen(true);
+  };
+
+  const handleRenewPPE = (delivery: PPEDelivery) => {
+    setSelectedDelivery(delivery);
+    setRenewalDialogOpen(true);
+  };
+
+  const handleDownloadReceipt = (delivery: PPEDelivery) => {
+    // Simulando o download do comprovante
+    toast({
+      title: "Download iniciado",
+      description: `Comprovante de entrega de ${delivery.ppeName} para ${delivery.employeeName}`,
+    });
+    
+    // Em um sistema real, aqui iniciaria o download do arquivo
+    setTimeout(() => {
+      toast({
+        title: "Download concluído",
+        description: "O comprovante foi baixado com sucesso",
+      });
+    }, 1500);
+  };
+
+  const handleDeletePPE = (delivery: PPEDelivery) => {
+    setSelectedDelivery(delivery);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeletePPE = () => {
+    if (selectedDelivery) {
+      // Aqui seria a lógica para excluir o registro do banco de dados
+      toast({
+        title: "EPI excluído",
+        description: `O registro de entrega de ${selectedDelivery.ppeName} para ${selectedDelivery.employeeName} foi excluído`,
+      });
+      setDeleteDialogOpen(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -324,10 +389,25 @@ const PPEManagement = () => {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  <DropdownMenuItem>Detalhes</DropdownMenuItem>
-                                  <DropdownMenuItem>Renovar</DropdownMenuItem>
-                                  <DropdownMenuItem>Baixar Comprovante</DropdownMenuItem>
-                                  <DropdownMenuItem className="text-red-500">Excluir</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleShowDetails(delivery)}>
+                                    <Info className="mr-2 h-4 w-4" />
+                                    Detalhes
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleRenewPPE(delivery)}>
+                                    <RefreshCw className="mr-2 h-4 w-4" />
+                                    Renovar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDownloadReceipt(delivery)}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Baixar Comprovante
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    className="text-red-500"
+                                    onClick={() => handleDeletePPE(delivery)}
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Excluir
+                                  </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </td>
@@ -398,6 +478,47 @@ const PPEManagement = () => {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Diálogo para detalhes do EPI */}
+      <PPEDetailDialog
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        delivery={selectedDelivery}
+      />
+
+      {/* Diálogo para renovação de EPI */}
+      <PPERenewalDialog
+        open={renewalDialogOpen}
+        onOpenChange={setRenewalDialogOpen}
+        delivery={selectedDelivery}
+      />
+
+      {/* Diálogo de confirmação para exclusão */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedDelivery && (
+                <>
+                  Tem certeza que deseja excluir o registro de entrega de <strong>{selectedDelivery.ppeName}</strong> para <strong>{selectedDelivery.employeeName}</strong>?
+                  <br />
+                  Esta ação não pode ser desfeita.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeletePPE}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
