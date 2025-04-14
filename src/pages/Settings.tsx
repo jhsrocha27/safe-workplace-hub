@@ -27,6 +27,17 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+// Define employee interface to ensure type safety
+interface Employee {
+  id: number;
+  name: string;
+  email?: string;
+  phone?: string;
+  position: string;
+  department: string;
+  status: string;
+}
+
 const Settings = () => {
   const [companyInfo, setCompanyInfo] = useState({
     name: "SafeWork Engenharia",
@@ -65,8 +76,8 @@ const Settings = () => {
 
   const [logLevel, setLogLevel] = useState("warning");
 
-  // State for employee management
-  const [employees, setEmployees] = useState([
+  // State for employee management with the proper interface
+  const [employees, setEmployees] = useState<Employee[]>([
     { id: 1, name: "João Silva", position: "Engenheiro de Segurança", department: "Engenharia", status: "Ativo" },
     { id: 2, name: "Maria Oliveira", position: "Técnico de Segurança", department: "Operações", status: "Ativo" },
     { id: 3, name: "Carlos Pereira", position: "Técnico de Segurança", department: "Operações", status: "Férias" }
@@ -74,7 +85,7 @@ const Settings = () => {
   
   const [openEmployeeDialog, setOpenEmployeeDialog] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [currentEmployee, setCurrentEmployee] = useState(null);
+  const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
 
   // Form schema for employee registration
   const employeeFormSchema = z.object({
@@ -144,7 +155,7 @@ const Settings = () => {
   // Function to add or edit employee
   const onEmployeeSubmit = (data: z.infer<typeof employeeFormSchema>) => {
     if (isEditMode && currentEmployee) {
-      // Edit existing employee
+      // Edit existing employee - ensure all required properties are included
       const updatedEmployees = employees.map(emp => 
         emp.id === currentEmployee.id ? { ...emp, ...data } : emp
       );
@@ -154,10 +165,15 @@ const Settings = () => {
         description: "Informações do funcionário atualizadas com sucesso.",
       });
     } else {
-      // Add new employee
-      const newEmployee = {
+      // Add new employee - ensure all required properties are included
+      const newEmployee: Employee = {
         id: employees.length > 0 ? Math.max(...employees.map(e => e.id)) + 1 : 1,
-        ...data
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        position: data.position,
+        department: data.department,
+        status: data.status
       };
       setEmployees([...employees, newEmployee]);
       toast({
@@ -174,7 +190,7 @@ const Settings = () => {
   };
 
   // Function to open form for editing an employee
-  const handleEditEmployee = (employee) => {
+  const handleEditEmployee = (employee: Employee) => {
     setIsEditMode(true);
     setCurrentEmployee(employee);
     employeeForm.reset({
@@ -189,7 +205,7 @@ const Settings = () => {
   };
 
   // Function to delete an employee
-  const handleDeleteEmployee = (id) => {
+  const handleDeleteEmployee = (id: number) => {
     setEmployees(employees.filter(emp => emp.id !== id));
     toast({
       title: "Funcionário removido",
