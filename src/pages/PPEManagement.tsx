@@ -1,5 +1,6 @@
-
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useToast } from "@/hooks/use-toast";
+import { usePPEForm } from '@/hooks/use-ppe-form';
 import {
   Card,
   CardContent,
@@ -9,6 +10,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Shield,
@@ -51,9 +53,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useToast } from "@/hooks/use-toast";
 import { PPEDetailDialog } from '@/components/ppe/PPEDetailDialog';
 import { PPERenewalDialog } from '@/components/ppe/PPERenewalDialog';
+import SignatureCanvas from '@/components/ppe/SignatureCanvas';
 
 interface PPEItem {
   id: number;
@@ -78,6 +80,14 @@ interface PPEDelivery {
   signature: boolean;
 }
 
+interface Employee {
+  id: number;
+  name: string;
+  position: string;
+  department: string;
+  status: string;
+}
+
 const ppeData: PPEItem[] = [
   { id: 1, name: 'Capacete de Segurança', ca: 'CA-12345', type: 'Proteção para cabeça', validityPeriod: 12, description: 'Capacete classe B, tipo II' },
   { id: 2, name: 'Protetor Auricular', ca: 'CA-23456', type: 'Proteção auditiva', validityPeriod: 6, description: 'Tipo plug, atenuação 15 dB' },
@@ -94,16 +104,29 @@ const ppeDeliveryData: PPEDelivery[] = [
   { id: 5, employeeId: 104, employeeName: 'Juliana Costa', position: 'Química', department: 'Laboratório', ppeId: 5, ppeName: 'Máscara PFF2', issueDate: '2025-03-01', expiryDate: '2025-04-01', status: 'expired', signature: false },
 ];
 
-const PPEManagement = () => {
+const employeeData: Employee[] = [
+  { id: 1, name: "João Silva", position: "Engenheiro de Segurança", department: "Engenharia", status: "Ativo" },
+  { id: 2, name: "Maria Oliveira", position: "Técnico de Segurança", department: "Operações", status: "Ativo" },
+  { id: 3, name: "Carlos Pereira", position: "Técnico de Segurança", department: "Operações", status: "Ativo" },
+  { id: 4, name: "Ana Ferreira", position: "Técnica", department: "Manutenção", status: "Ativo" },
+  { id: 5, name: "Marcos Lima", position: "Auxiliar", department: "Logística", status: "Ativo" },
+  { id: 6, name: "Juliana Costa", position: "Química", department: "Laboratório", status: "Ativo" }
+];
+
+function PPEManagement(): JSX.Element {
+  const { toast } = useToast();
+  const { formData, setField, resetForm, validateForm, errors, isValid } = usePPEForm();
   const [searchTerm, setSearchTerm] = useState('');
+  const [signatureData, setSignatureData] = useState<string>('');
   const [currentTab, setCurrentTab] = useState('deliveries');
   const [selectedDelivery, setSelectedDelivery] = useState<PPEDelivery | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [renewalDialogOpen, setRenewalDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const { toast } = useToast();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [deliveries, setDeliveries] = useState<PPEDelivery[]>(ppeDeliveryData);
 
-  const filteredDeliveries = ppeDeliveryData.filter(delivery => {
+  const filteredDeliveries = deliveries.filter(delivery => {
     return delivery.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       delivery.ppeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       delivery.department.toLowerCase().includes(searchTerm.toLowerCase());
@@ -125,45 +148,101 @@ const PPEManagement = () => {
     setRenewalDialogOpen(true);
   };
 
-  const handleDownloadReceipt = (delivery: PPEDelivery) => {
-    // Simulando o download do comprovante
-    toast({
-      title: "Download iniciado",
-      description: `Comprovante de entrega de ${delivery.ppeName} para ${delivery.employeeName}`,
-    });
-    
-    // Em um sistema real, aqui iniciaria o download do arquivo
-    setTimeout(() => {
-      toast({
-        title: "Download concluído",
-        description: "O comprovante foi baixado com sucesso",
-      });
-    }, 1500);
-  };
-
   const handleDeletePPE = (delivery: PPEDelivery) => {
     setSelectedDelivery(delivery);
     setDeleteDialogOpen(true);
   };
 
+  const handleDownloadReceipt = (delivery: PPEDelivery) => {
+    const content = `
+      COMPROVANTE DE ENTREGA DE EPI
+      
+      Funcionário: ${delivery.employeeName}
+      Cargo: ${delivery.position}
+      Departamento: ${delivery.department}
+      
+      EPI: ${delivery.ppeName}
+      Data de Entrega: ${delivery.issueDate}
+      Data de Validade: ${delivery.expiryDate}
+      
+      Status: ${delivery.status}
+      Assinado: ${delivery.signature ? 'Sim' : 'Não'}
+    `;
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `comprovante_epi_${delivery.employeeName.replace(' ', '_')}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    toast({
+      title: "Comprovante baixado",
+      description: `O comprovante de ${delivery.ppeName} foi gerado com sucesso`
+    });
+  };
+
   const confirmDeletePPE = () => {
     if (selectedDelivery) {
-      // Aqui seria a lógica para excluir o registro do banco de dados
+      setDeliveries(prev => prev.filter(d => d.id !== selectedDelivery.id));
       toast({
         title: "EPI excluído",
-        description: `O registro de entrega de ${selectedDelivery.ppeName} para ${selectedDelivery.employeeName} foi excluído`,
+        description: `O registro de entrega de ${selectedDelivery.ppeName} para ${selectedDelivery.employeeName} foi excluído`
       });
       setDeleteDialogOpen(false);
     }
   };
 
+  const handleSaveDelivery = () => {
+    if (!validateForm() || !signatureData) {
+      toast({
+        title: "Erro ao salvar",
+        description: "Por favor, preencha todos os campos obrigatórios e adicione a assinatura.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const newDelivery: PPEDelivery = {
+      id: deliveries.length + 1,
+      employeeId: employeeData.find(emp => emp.name === formData.employeeName)?.id || 0,
+      employeeName: formData.employeeName,
+      position: employeeData.find(emp => emp.name === formData.employeeName)?.position || '',
+      department: employeeData.find(emp => emp.name === formData.employeeName)?.department || '',
+      ppeId: ppeData.find(ppe => ppe.name === formData.ppeName)?.id || 0,
+      ppeName: formData.ppeName,
+      issueDate: formData.issueDate,
+      expiryDate: formData.expiryDate,
+      status: 'valid',
+      signature: signatureData
+    };
+
+    const updatedDeliveries = [...deliveries, newDelivery];
+    setDeliveries(updatedDeliveries);
+
+    // Salvar no localStorage
+    updateLocalStorage('ppeDeliveries', updatedDeliveries);
+
+    toast({
+      title: "Entrega registrada",
+      description: `A entrega de ${formData.ppeName} para ${formData.employeeName} foi registrada com sucesso.`
+    });
+
+    resetForm();
+    setSignatureData('');
+    setIsDialogOpen(false);
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Gestão de EPIs</h1>
 
         <div className="flex gap-3">
-          <Dialog>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline">
                 <Shield className="mr-2 h-4 w-4" /> Cadastrar EPI
@@ -200,16 +279,19 @@ const PPEManagement = () => {
                   </div>
                 </div>
               </div>
-              <div className="flex justify-end gap-3">
-                <DialogTrigger asChild>
-                  <Button variant="outline">Cancelar</Button>
-                </DialogTrigger>
-                <Button className="bg-safety-blue hover:bg-safety-blue/90">Salvar</Button>
-              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+                <Button 
+                  className="bg-safety-blue hover:bg-safety-blue/90"
+                  onClick={handleSaveDelivery}
+                >
+                  Salvar
+                </Button>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
 
-          <Dialog>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-safety-blue hover:bg-safety-blue/90">
                 <Plus className="mr-2 h-4 w-4" /> Nova Entrega
@@ -226,38 +308,79 @@ const PPEManagement = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
                     <label className="block text-sm font-medium mb-1">Funcionário</label>
-                    <Input placeholder="Selecione o funcionário" />
+                    <Select
+                      value={formData.employeeName}
+                      onValueChange={(value) => setField('employeeName', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o funcionário" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {employeeData.map((employee) => (
+                          <SelectItem key={employee.id} value={employee.name}>
+                            {employee.name} - {employee.position}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="col-span-2">
                     <label className="block text-sm font-medium mb-1">EPI</label>
-                    <Input placeholder="Selecione o EPI" />
+                    <Select
+                      value={formData.ppeName}
+                      onValueChange={(value) => setField('ppeName', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o EPI" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ppeData.map((ppe) => (
+                          <SelectItem key={ppe.id} value={ppe.name}>
+                            {ppe.name} - {ppe.ca}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Data de Entrega</label>
-                    <Input type="date" />
+                    <Input 
+                      type="date"
+                      value={formData.issueDate}
+                      onChange={(e) => setField('issueDate', e.target.value)}
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Validade</label>
-                    <Input type="date" />
+                    <Input 
+                      type="date"
+                      value={formData.expiryDate}
+                      onChange={(e) => setField('expiryDate', e.target.value)}
+                    />
                   </div>
                   <div className="col-span-2">
                     <label className="block text-sm font-medium mb-1">Observações</label>
-                    <Input placeholder="Informações adicionais" />
+                    <Input 
+                      placeholder="Informações adicionais"
+                      value={formData.observations}
+                      onChange={(e) => setField('observations', e.target.value)}
+                    />
                   </div>
                   <div className="col-span-2">
                     <label className="block text-sm font-medium mb-1">Assinatura do Funcionário</label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-md p-6 h-32 text-center flex items-center justify-center">
-                      <p className="text-sm text-gray-600">Área para assinatura digital</p>
-                    </div>
+                    <SignatureCanvas onSave={setSignatureData} />
                   </div>
                 </div>
               </div>
-              <div className="flex justify-end gap-3">
-                <DialogTrigger asChild>
-                  <Button variant="outline">Cancelar</Button>
-                </DialogTrigger>
-                <Button className="bg-safety-blue hover:bg-safety-blue/90">Salvar</Button>
-              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+                <Button 
+                  className="bg-safety-blue hover:bg-safety-blue/90"
+                  onClick={handleSaveDelivery}
+                >
+                  Salvar
+                </Button>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
@@ -479,40 +602,32 @@ const PPEManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Diálogo para detalhes do EPI */}
       <PPEDetailDialog
         open={detailDialogOpen}
         onOpenChange={setDetailDialogOpen}
         delivery={selectedDelivery}
       />
 
-      {/* Diálogo para renovação de EPI */}
       <PPERenewalDialog
         open={renewalDialogOpen}
         onOpenChange={setRenewalDialogOpen}
         delivery={selectedDelivery}
       />
 
-      {/* Diálogo de confirmação para exclusão */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              {selectedDelivery && (
-                <>
-                  Tem certeza que deseja excluir o registro de entrega de <strong>{selectedDelivery.ppeName}</strong> para <strong>{selectedDelivery.employeeName}</strong>?
-                  <br />
-                  Esta ação não pode ser desfeita.
-                </>
-              )}
+              Tem certeza que deseja excluir este registro de entrega de EPI?
+              Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
+              className="bg-red-500 hover:bg-red-600"
               onClick={confirmDeletePPE}
-              className="bg-red-600 hover:bg-red-700"
             >
               Excluir
             </AlertDialogAction>
@@ -521,6 +636,6 @@ const PPEManagement = () => {
       </AlertDialog>
     </div>
   );
-};
+}
 
 export default PPEManagement;
