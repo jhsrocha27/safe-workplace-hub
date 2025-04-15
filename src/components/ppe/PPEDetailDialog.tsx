@@ -23,8 +23,8 @@ interface PPEDelivery {
   issueDate: string;
   expiryDate: string;
   status: 'valid' | 'expired' | 'expiring';
-  signature: boolean;
 }
+
 
 interface PPEDetailDialogProps {
   open: boolean;
@@ -104,19 +104,7 @@ export function PPEDetailDialog({ open, onOpenChange, delivery }: PPEDetailDialo
               <p className="text-base">{new Date(delivery.expiryDate).toLocaleDateString('pt-BR')}</p>
             </div>
 
-            <div className="col-span-2">
-              <h3 className="text-sm font-medium text-gray-500">Assinatura do funcionário</h3>
-              <div className="mt-2">
-                {delivery.signature ? (
-                  <div className="flex items-center text-safety-green">
-                    <FileCheck className="h-5 w-5 mr-2" />
-                    <span>Assinatura confirmada</span>
-                  </div>
-                ) : (
-                  <Badge variant="outline" className="text-safety-red border-safety-red">Assinatura pendente</Badge>
-                )}
-              </div>
-            </div>
+
           </div>
         </div>
         

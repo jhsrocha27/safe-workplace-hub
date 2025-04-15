@@ -6,14 +6,12 @@ interface PPEFormState {
   issueDate: string;
   expiryDate: string;
   observations: string;
-  signature: string;
   isValid: boolean;
   errors: {
     employeeName?: string;
     ppeName?: string;
     issueDate?: string;
     expiryDate?: string;
-    signature?: string;
   };
 }
 
@@ -28,7 +26,6 @@ const initialState: PPEFormState = {
   issueDate: '',
   expiryDate: '',
   observations: '',
-  signature: '',
   isValid: false,
   errors: {}
 };
@@ -51,28 +48,24 @@ function formReducer(state: PPEFormState, action: PPEFormAction): PPEFormState {
     case 'VALIDATE_FORM': {
       const errors: PPEFormState['errors'] = {};
       
-      if (!state.employeeName) {
+      if (!state.employeeName.trim()) {
         errors.employeeName = 'Nome do funcionário é obrigatório';
       }
       
-      if (!state.ppeName) {
+      if (!state.ppeName.trim()) {
         errors.ppeName = 'EPI é obrigatório';
       }
       
-      if (!state.issueDate) {
+      if (!state.issueDate.trim()) {
         errors.issueDate = 'Data de entrega é obrigatória';
       }
       
-      if (!state.expiryDate) {
+      if (!state.expiryDate.trim()) {
         errors.expiryDate = 'Data de validade é obrigatória';
       } else if (new Date(state.expiryDate) <= new Date(state.issueDate)) {
         errors.expiryDate = 'Data de validade deve ser posterior à data de entrega';
       }
       
-      if (!state.signature) {
-        errors.signature = 'Assinatura é obrigatória';
-      }
-
       return {
         ...state,
         errors,
@@ -89,16 +82,30 @@ export function usePPEForm() {
   const [state, dispatch] = useReducer(formReducer, initialState);
 
   const setField = (field: keyof Omit<PPEFormState, 'isValid' | 'errors'>, value: string) => {
-    dispatch({ type: 'SET_FIELD', field, value });
+    let formattedValue = value;
+    
+    if (field === 'issueDate' || field === 'expiryDate') {
+      const date = new Date(value);
+      if (!isNaN(date.getTime())) {
+        formattedValue = date.toISOString().split('T')[0];
+      }
+    }
+    
+    dispatch({ type: 'SET_FIELD', field, value: formattedValue });
   };
 
   const resetForm = () => {
     dispatch({ type: 'RESET_FORM' });
   };
 
-  const validateForm = () => {
+  const validateForm = async () => {
     dispatch({ type: 'VALIDATE_FORM' });
-    return state.isValid;
+    return new Promise<boolean>((resolve) => {
+      // Aguarda o próximo ciclo de renderização para garantir que o estado foi atualizado
+      setTimeout(() => {
+        resolve(state.isValid);
+      }, 0);
+    });
   };
 
   return {

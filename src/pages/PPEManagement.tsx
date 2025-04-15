@@ -55,7 +55,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PPEDetailDialog } from '@/components/ppe/PPEDetailDialog';
 import { PPERenewalDialog } from '@/components/ppe/PPERenewalDialog';
-import SignatureCanvas from '@/components/ppe/SignatureCanvas';
 
 interface PPEItem {
   id: number;
@@ -77,7 +76,6 @@ interface PPEDelivery {
   issueDate: string;
   expiryDate: string;
   status: 'valid' | 'expired' | 'expiring';
-  signature: boolean;
 }
 
 interface Employee {
@@ -97,11 +95,11 @@ const ppeData: PPEItem[] = [
 ];
 
 const ppeDeliveryData: PPEDelivery[] = [
-  { id: 1, employeeId: 101, employeeName: 'Carlos Santos', position: 'Operador', department: 'Produção', ppeId: 1, ppeName: 'Capacete de Segurança', issueDate: '2025-01-15', expiryDate: '2026-01-15', status: 'valid', signature: true },
-  { id: 2, employeeId: 101, employeeName: 'Carlos Santos', position: 'Operador', department: 'Produção', ppeId: 2, ppeName: 'Protetor Auricular', issueDate: '2025-01-15', expiryDate: '2025-07-15', status: 'expiring', signature: true },
-  { id: 3, employeeId: 102, employeeName: 'Ana Ferreira', position: 'Técnica', department: 'Manutenção', ppeId: 3, ppeName: 'Óculos de Proteção', issueDate: '2024-12-10', expiryDate: '2025-06-10', status: 'valid', signature: true },
-  { id: 4, employeeId: 103, employeeName: 'Marcos Lima', position: 'Auxiliar', department: 'Logística', ppeId: 4, ppeName: 'Luvas de Segurança', issueDate: '2025-02-05', expiryDate: '2025-05-05', status: 'expiring', signature: true },
-  { id: 5, employeeId: 104, employeeName: 'Juliana Costa', position: 'Química', department: 'Laboratório', ppeId: 5, ppeName: 'Máscara PFF2', issueDate: '2025-03-01', expiryDate: '2025-04-01', status: 'expired', signature: false },
+  { id: 1, employeeId: 101, employeeName: 'Carlos Santos', position: 'Operador', department: 'Produção', ppeId: 1, ppeName: 'Capacete de Segurança', issueDate: '2025-01-15', expiryDate: '2026-01-15', status: 'valid' },
+  { id: 2, employeeId: 101, employeeName: 'Carlos Santos', position: 'Operador', department: 'Produção', ppeId: 2, ppeName: 'Protetor Auricular', issueDate: '2025-01-15', expiryDate: '2025-07-15', status: 'expiring' },
+  { id: 3, employeeId: 102, employeeName: 'Ana Ferreira', position: 'Técnica', department: 'Manutenção', ppeId: 3, ppeName: 'Óculos de Proteção', issueDate: '2024-12-10', expiryDate: '2025-06-10', status: 'valid' },
+  { id: 4, employeeId: 103, employeeName: 'Marcos Lima', position: 'Auxiliar', department: 'Logística', ppeId: 4, ppeName: 'Luvas de Segurança', issueDate: '2025-02-05', expiryDate: '2025-05-05', status: 'expiring' },
+  { id: 5, employeeId: 104, employeeName: 'Juliana Costa', position: 'Química', department: 'Laboratório', ppeId: 5, ppeName: 'Máscara PFF2', issueDate: '2025-03-01', expiryDate: '2025-04-01', status: 'expired' },
 ];
 
 const employeeData: Employee[] = [
@@ -117,14 +115,16 @@ function PPEManagement(): JSX.Element {
   const { toast } = useToast();
   const { formData, setField, resetForm, validateForm, errors, isValid } = usePPEForm();
   const [searchTerm, setSearchTerm] = useState('');
-  const [signatureData, setSignatureData] = useState<string>('');
+
   const [currentTab, setCurrentTab] = useState('deliveries');
   const [selectedDelivery, setSelectedDelivery] = useState<PPEDelivery | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [renewalDialogOpen, setRenewalDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isNewPPEDialogOpen, setIsNewPPEDialogOpen] = useState(false);
+  const [isDeliveryDialogOpen, setIsDeliveryDialogOpen] = useState(false);
   const [deliveries, setDeliveries] = useState<PPEDelivery[]>(ppeDeliveryData);
+  const [ppeItems, setPPEItems] = useState<PPEItem[]>(ppeData);
 
   const filteredDeliveries = deliveries.filter(delivery => {
     return delivery.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -132,11 +132,47 @@ function PPEManagement(): JSX.Element {
       delivery.department.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  const filteredItems = ppeData.filter(item => {
+  const filteredItems = ppeItems.filter(item => {
     return item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.ca.toLowerCase().includes(searchTerm.toLowerCase());
   });
+
+  const handleSavePPE = () => {
+    const nameInput = document.querySelector('input[placeholder="Ex: Capacete de Segurança"]') as HTMLInputElement;
+    const caInput = document.querySelector('input[placeholder="Ex: CA-12345"]') as HTMLInputElement;
+    const typeInput = document.querySelector('input[placeholder="Ex: Proteção para cabeça"]') as HTMLInputElement;
+    const validityInput = document.querySelector('input[placeholder="Ex: 12"]') as HTMLInputElement;
+    const descriptionInput = document.querySelector('input[placeholder="Detalhes adicionais sobre o EPI"]') as HTMLInputElement;
+
+    if (!nameInput?.value || !caInput?.value || !typeInput?.value || !validityInput?.value) {
+      toast({
+        title: "Erro ao salvar",
+        description: "Por favor, preencha todos os campos obrigatórios.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const newPPE: PPEItem = {
+      id: ppeItems.length + 1,
+      name: nameInput.value,
+      ca: caInput.value,
+      type: typeInput.value,
+      validityPeriod: parseInt(validityInput.value),
+      description: descriptionInput?.value || ''
+    };
+
+    const updatedPPEItems = [...ppeItems, newPPE];
+    setPPEItems(updatedPPEItems);
+
+    toast({
+      title: "EPI cadastrado",
+      description: `O EPI ${newPPE.name} foi cadastrado com sucesso no catálogo.`
+    });
+
+    setIsNewPPEDialogOpen(false);
+  };
 
   const handleShowDetails = (delivery: PPEDelivery) => {
     setSelectedDelivery(delivery);
@@ -166,7 +202,6 @@ function PPEManagement(): JSX.Element {
       Data de Validade: ${delivery.expiryDate}
       
       Status: ${delivery.status}
-      Assinado: ${delivery.signature ? 'Sim' : 'Não'}
     `;
 
     const blob = new Blob([content], { type: 'text/plain' });
@@ -197,14 +232,16 @@ function PPEManagement(): JSX.Element {
   };
 
   const handleSaveDelivery = () => {
-    if (!validateForm() || !signatureData) {
+    if (!validateForm()) {
       toast({
         title: "Erro ao salvar",
-        description: "Por favor, preencha todos os campos obrigatórios e adicione a assinatura.",
+        description: "Por favor, preencha todos os campos obrigatórios.",
         variant: "destructive"
       });
       return;
     }
+
+
 
     const newDelivery: PPEDelivery = {
       id: deliveries.length + 1,
@@ -216,8 +253,7 @@ function PPEManagement(): JSX.Element {
       ppeName: formData.ppeName,
       issueDate: formData.issueDate,
       expiryDate: formData.expiryDate,
-      status: 'valid',
-      signature: signatureData
+      status: 'valid'
     };
 
     const updatedDeliveries = [...deliveries, newDelivery];
@@ -232,8 +268,8 @@ function PPEManagement(): JSX.Element {
     });
 
     resetForm();
-    setSignatureData('');
-    setIsDialogOpen(false);
+
+    setDeliveryDialogOpen(false);
   };
 
   return (
@@ -242,7 +278,7 @@ function PPEManagement(): JSX.Element {
         <h1 className="text-2xl font-bold">Gestão de EPIs</h1>
 
         <div className="flex gap-3">
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isNewPPEDialogOpen} onOpenChange={setIsNewPPEDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline">
                 <Shield className="mr-2 h-4 w-4" /> Cadastrar EPI
@@ -280,10 +316,10 @@ function PPEManagement(): JSX.Element {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+                <Button variant="outline" onClick={() => setIsNewPPEDialogOpen(false)}>Cancelar</Button>
                 <Button 
                   className="bg-safety-blue hover:bg-safety-blue/90"
-                  onClick={handleSaveDelivery}
+                  onClick={handleSavePPE}
                 >
                   Salvar
                 </Button>
@@ -291,7 +327,7 @@ function PPEManagement(): JSX.Element {
             </DialogContent>
           </Dialog>
 
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isDeliveryDialogOpen} onOpenChange={setIsDeliveryDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-safety-blue hover:bg-safety-blue/90">
                 <Plus className="mr-2 h-4 w-4" /> Nova Entrega
@@ -366,14 +402,11 @@ function PPEManagement(): JSX.Element {
                       onChange={(e) => setField('observations', e.target.value)}
                     />
                   </div>
-                  <div className="col-span-2">
-                    <label className="block text-sm font-medium mb-1">Assinatura do Funcionário</label>
-                    <SignatureCanvas onSave={setSignatureData} />
-                  </div>
+
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+                <Button variant="outline" onClick={() => setIsDeliveryDialogOpen(false)}>Cancelar</Button>
                 <Button 
                   className="bg-safety-blue hover:bg-safety-blue/90"
                   onClick={handleSaveDelivery}
@@ -467,7 +500,6 @@ function PPEManagement(): JSX.Element {
                           </div>
                         </th>
                         <th scope="col" className="px-6 py-3">Status</th>
-                        <th scope="col" className="px-6 py-3">Assinatura</th>
                         <th scope="col" className="px-6 py-3">Ações</th>
                       </tr>
                     </thead>
@@ -495,13 +527,6 @@ function PPEManagement(): JSX.Element {
                               )}
                               {delivery.status === 'expired' && (
                                 <Badge className="bg-safety-red">Vencido</Badge>
-                              )}
-                            </td>
-                            <td className="px-6 py-4">
-                              {delivery.signature ? (
-                                <FileCheck className="h-4 w-4 text-safety-green" />
-                              ) : (
-                                <Badge variant="outline" className="text-safety-red border-safety-red">Pendente</Badge>
                               )}
                             </td>
                             <td className="px-6 py-4">
@@ -538,7 +563,7 @@ function PPEManagement(): JSX.Element {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                          <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                             Nenhuma entrega encontrada
                           </td>
                         </tr>
