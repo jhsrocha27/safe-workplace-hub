@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { usePPEForm } from '@/hooks/use-ppe-form';
@@ -543,7 +544,6 @@ function PPEManagement(): JSX.Element {
                       onChange={(e) => setField('observations', e.target.value)}
                     />
                   </div>
-
                 </div>
               </div>
               <DialogFooter>
@@ -808,3 +808,169 @@ function PPEManagement(): JSX.Element {
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
               Tem certeza que deseja excluir este registro de entrega de EPI?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-red-600 hover:bg-red-700"
+              onClick={confirmDeletePPE}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog para editar um EPI */}
+      <Dialog open={isEditPPEDialogOpen} onOpenChange={setIsEditPPEDialogOpen}>
+        <DialogContent className="sm:max-w-[625px]">
+          <DialogHeader>
+            <DialogTitle>Editar EPI</DialogTitle>
+            <DialogDescription>
+              Atualize as informações do equipamento de proteção individual.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <label className="block text-sm font-medium mb-1">Nome do EPI</label>
+                <Input 
+                  name="edit-ppe-name"
+                  defaultValue={selectedPPEItem?.name || ''}
+                  placeholder="Ex: Capacete de Segurança"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Número do CA</label>
+                <Input 
+                  name="edit-ppe-ca"
+                  defaultValue={selectedPPEItem?.ca || ''}
+                  placeholder="Ex: CA-12345"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Tipo de Proteção</label>
+                <Input 
+                  name="edit-ppe-type"
+                  defaultValue={selectedPPEItem?.type || ''}
+                  placeholder="Ex: Proteção para cabeça"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Validade (meses)</label>
+                <Input 
+                  name="edit-ppe-validity"
+                  type="number" 
+                  defaultValue={selectedPPEItem?.validityPeriod.toString() || ''}
+                  placeholder="Ex: 12"
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium mb-1">Descrição</label>
+                <Input 
+                  name="edit-ppe-description"
+                  defaultValue={selectedPPEItem?.description || ''}
+                  placeholder="Detalhes adicionais sobre o EPI"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditPPEDialogOpen(false)}>Cancelar</Button>
+            <Button 
+              className="bg-safety-blue hover:bg-safety-blue/90"
+              onClick={handleUpdatePPE}
+            >
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para ver histórico de entregas de um EPI */}
+      <Dialog open={isPPEHistoryDialogOpen} onOpenChange={setIsPPEHistoryDialogOpen}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>Histórico de Entregas - {selectedPPEItem?.name}</DialogTitle>
+            <DialogDescription>
+              Registro de todas as entregas deste EPI para funcionários.
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="h-[400px] mt-4">
+            <div className="relative overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Funcionário</TableHead>
+                    <TableHead>Departamento</TableHead>
+                    <TableHead>Data Entrega</TableHead>
+                    <TableHead>Data Validade</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {selectedPPEItem && deliveries.filter(d => d.ppeId === selectedPPEItem.id).length > 0 ? (
+                    deliveries
+                      .filter(d => d.ppeId === selectedPPEItem?.id)
+                      .map(delivery => (
+                        <TableRow key={delivery.id}>
+                          <TableCell className="font-medium">{delivery.employeeName}</TableCell>
+                          <TableCell>{delivery.department}</TableCell>
+                          <TableCell>{new Date(delivery.issueDate).toLocaleDateString('pt-BR')}</TableCell>
+                          <TableCell>{new Date(delivery.expiryDate).toLocaleDateString('pt-BR')}</TableCell>
+                          <TableCell>
+                            {delivery.status === 'valid' && <Badge className="bg-safety-green">Válido</Badge>}
+                            {delivery.status === 'expiring' && <Badge className="bg-safety-orange">A vencer</Badge>}
+                            {delivery.status === 'expired' && <Badge className="bg-safety-red">Vencido</Badge>}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                        Nenhuma entrega encontrada para este EPI
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </ScrollArea>
+          <DialogFooter>
+            <Button onClick={() => setIsPPEHistoryDialogOpen(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para confirmar a exclusão de um EPI */}
+      <AlertDialog open={isDeletePPEDialogOpen} onOpenChange={setIsDeletePPEDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o EPI "{selectedPPEItem?.name}"? Esta ação não pode ser desfeita.
+              {deliveries.filter(d => d.ppeId === selectedPPEItem?.id).length > 0 && (
+                <p className="mt-2 text-red-500">
+                  <strong>Atenção:</strong> Existem entregas registradas para este EPI. 
+                  Elas também serão excluídas.
+                </p>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-red-600 hover:bg-red-700"
+              onClick={confirmDeletePPEItem}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+export default PPEManagement;
