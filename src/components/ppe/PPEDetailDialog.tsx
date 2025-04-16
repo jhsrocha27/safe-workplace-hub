@@ -34,11 +34,19 @@ interface PPEDetailDialogProps {
 }
 
 export function PPEDetailDialog({ open, onOpenChange, delivery }: PPEDetailDialogProps) {
-  if (!delivery) return null;
+  // Se não houver delivery, retornar null para evitar renderizações desnecessárias
+  if (!delivery) {
+    return null;
+  }
+
+  // Função para fechar o diálogo de forma segura
+  const handleClose = () => {
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[525px]" onEscapeKeyDown={handleClose} onPointerDownOutside={handleClose}>
         <DialogHeader>
           <DialogTitle>Detalhes do EPI</DialogTitle>
           <DialogDescription>
@@ -105,12 +113,15 @@ export function PPEDetailDialog({ open, onOpenChange, delivery }: PPEDetailDialo
               <p className="text-base">{new Date(delivery.expiryDate).toLocaleDateString('pt-BR')}</p>
             </div>
 
-
+            <div className="col-span-2">
+              <h3 className="text-sm font-medium text-gray-500">Assinatura</h3>
+              <p className="text-base">{delivery.signature ? 'Assinado' : 'Não assinado'}</p>
+            </div>
           </div>
         </div>
         
         <DialogFooter>
-          <Button onClick={() => onOpenChange(false)}>Fechar</Button>
+          <Button onClick={handleClose}>Fechar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

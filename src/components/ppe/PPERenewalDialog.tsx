@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -37,11 +37,24 @@ export function PPERenewalDialog({ open, onOpenChange, delivery }: PPERenewalDia
   const [newExpiryDate, setNewExpiryDate] = useState("");
   const { toast } = useToast();
   
+  // Reset form when dialog opens with new delivery data
+  useEffect(() => {
+    if (open && delivery) {
+      // Calcula um ano a partir da data atual para sugestão de renovação
+      const suggestedDate = new Date();
+      suggestedDate.setFullYear(suggestedDate.getFullYear() + 1);
+      setNewExpiryDate(suggestedDate.toISOString().split('T')[0]);
+    } else {
+      setNewExpiryDate("");
+    }
+  }, [open, delivery]);
+  
   if (!delivery) return null;
   
-  // Calcula um ano a partir da data atual para sugestão de renovação
-  const suggestedDate = new Date();
-  suggestedDate.setFullYear(suggestedDate.getFullYear() + 1);
+  // Função segura para fechar o diálogo
+  const handleClose = () => {
+    onOpenChange(false);
+  };
   
   const handleRenewal = () => {
     if (!newExpiryDate) {
@@ -60,12 +73,16 @@ export function PPERenewalDialog({ open, onOpenChange, delivery }: PPERenewalDia
       description: `O ${delivery.ppeName} de ${delivery.employeeName} foi renovado com sucesso até ${new Date(newExpiryDate).toLocaleDateString('pt-BR')}`,
     });
     
-    onOpenChange(false);
+    handleClose();
   };
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent 
+        className="sm:max-w-[525px]"
+        onEscapeKeyDown={handleClose}
+        onPointerDownOutside={handleClose}
+      >
         <DialogHeader>
           <DialogTitle>Renovar EPI</DialogTitle>
           <DialogDescription>
@@ -118,7 +135,7 @@ export function PPERenewalDialog({ open, onOpenChange, delivery }: PPERenewalDia
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={handleClose}>
             Cancelar
           </Button>
           <Button 
