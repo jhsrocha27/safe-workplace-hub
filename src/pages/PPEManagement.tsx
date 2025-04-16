@@ -231,8 +231,20 @@ function PPEManagement(): JSX.Element {
     }
   };
 
+  // Função para salvar dados no localStorage
+  const updateLocalStorage = (key: string, data: any) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+      return true;
+    } catch (error) {
+      console.error(`Erro ao salvar no localStorage: ${error}`);
+      return false;
+    }
+  };
+
   const handleSaveDelivery = () => {
-    if (!validateForm()) {
+    // Validação imediata dos campos obrigatórios
+    if (!formData.employeeName || !formData.ppeName || !formData.issueDate || !formData.expiryDate) {
       toast({
         title: "Erro ao salvar",
         description: "Por favor, preencha todos os campos obrigatórios.",
@@ -241,7 +253,15 @@ function PPEManagement(): JSX.Element {
       return;
     }
 
-
+    // Validação da data de validade
+    if (new Date(formData.expiryDate) <= new Date(formData.issueDate)) {
+      toast({
+        title: "Erro ao salvar",
+        description: "A data de validade deve ser posterior à data de entrega.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     const newDelivery: PPEDelivery = {
       id: deliveries.length + 1,
@@ -261,15 +281,14 @@ function PPEManagement(): JSX.Element {
 
     // Salvar no localStorage
     updateLocalStorage('ppeDeliveries', updatedDeliveries);
-
+    
     toast({
       title: "Entrega registrada",
       description: `A entrega de ${formData.ppeName} para ${formData.employeeName} foi registrada com sucesso.`
     });
 
     resetForm();
-
-    setDeliveryDialogOpen(false);
+    setIsDeliveryDialogOpen(false);
   };
 
   return (

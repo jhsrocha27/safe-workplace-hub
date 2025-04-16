@@ -63,7 +63,7 @@ function formReducer(state: PPEFormState, action: PPEFormAction): PPEFormState {
       if (!state.expiryDate.trim()) {
         errors.expiryDate = 'Data de validade é obrigatória';
       } else if (new Date(state.expiryDate) <= new Date(state.issueDate)) {
-        errors.expiryDate = 'Data de validade deve ser posterior à data de entrega';
+        errors.expiryDate = 'ERRO: A data de validade deve ser posterior à data de entrega. Por favor, selecione uma data de validade que seja maior que a data de entrega.';
       }
       
       return {
@@ -98,14 +98,9 @@ export function usePPEForm() {
     dispatch({ type: 'RESET_FORM' });
   };
 
-  const validateForm = async () => {
+  const validateForm = () => {
     dispatch({ type: 'VALIDATE_FORM' });
-    return new Promise<boolean>((resolve) => {
-      // Aguarda o próximo ciclo de renderização para garantir que o estado foi atualizado
-      setTimeout(() => {
-        resolve(state.isValid);
-      }, 0);
-    });
+    return Object.keys(state.errors).length === 0;
   };
 
   return {
