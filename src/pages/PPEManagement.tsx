@@ -26,7 +26,9 @@ import {
   Info,
   RefreshCw,
   Trash2,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Edit,
+  History
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -129,6 +131,12 @@ function PPEManagement(): JSX.Element {
   const [isDeliveryDialogOpen, setIsDeliveryDialogOpen] = useState(false);
   const [deliveries, setDeliveries] = useState<PPEDelivery[]>(ppeDeliveryData);
   const [ppeItems, setPPEItems] = useState<PPEItem[]>(ppeData);
+  
+  // Novos estados para o catálogo de EPIs
+  const [selectedPPEItem, setSelectedPPEItem] = useState<PPEItem | null>(null);
+  const [isEditPPEDialogOpen, setIsEditPPEDialogOpen] = useState(false);
+  const [isPPEHistoryDialogOpen, setIsPPEHistoryDialogOpen] = useState(false);
+  const [isDeletePPEDialogOpen, setIsDeletePPEDialogOpen] = useState(false);
 
   const filteredDeliveries = deliveries.filter(delivery => {
     return delivery.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -191,6 +199,86 @@ function PPEManagement(): JSX.Element {
   const handleDeletePPE = (delivery: PPEDelivery) => {
     setSelectedDelivery(delivery);
     setDeleteDialogOpen(true);
+  };
+
+  // Funções para lidar com ações no catálogo de EPIs
+  const handleEditPPE = (item: PPEItem) => {
+    setSelectedPPEItem(item);
+    setIsEditPPEDialogOpen(true);
+  };
+
+  const handleViewPPEHistory = (item: PPEItem) => {
+    setSelectedPPEItem(item);
+    setIsPPEHistoryDialogOpen(true);
+  };
+
+  const handleConfirmDeletePPE = (item: PPEItem) => {
+    setSelectedPPEItem(item);
+    setIsDeletePPEDialogOpen(true);
+  };
+
+  const confirmDeletePPEItem = () => {
+    if (selectedPPEItem) {
+      setPPEItems(prev => prev.filter(p => p.id !== selectedPPEItem.id));
+      
+      // Também remover entregas associadas a este EPI
+      setDeliveries(prev => prev.filter(d => d.ppeId !== selectedPPEItem.id));
+      
+      toast({
+        title: "EPI excluído",
+        description: `O EPI ${selectedPPEItem.name} foi excluído com sucesso.`
+      });
+      
+      setIsDeletePPEDialogOpen(false);
+    }
+  };
+
+  const handleUpdatePPE = () => {
+    if (!selectedPPEItem) return;
+    
+    const nameInput = document.querySelector('input[name="edit-ppe-name"]') as HTMLInputElement;
+    const caInput = document.querySelector('input[name="edit-ppe-ca"]') as HTMLInputElement;
+    const typeInput = document.querySelector('input[name="edit-ppe-type"]') as HTMLInputElement;
+    const validityInput = document.querySelector('input[name="edit-ppe-validity"]') as HTMLInputElement;
+    const descriptionInput = document.querySelector('input[name="edit-ppe-description"]') as HTMLInputElement;
+
+    if (!nameInput?.value || !caInput?.value || !typeInput?.value || !validityInput?.value) {
+      toast({
+        title: "Erro ao atualizar",
+        description: "Por favor, preencha todos os campos obrigatórios.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const updatedPPEItem: PPEItem = {
+      ...selectedPPEItem,
+      name: nameInput.value,
+      ca: caInput.value,
+      type: typeInput.value,
+      validityPeriod: parseInt(validityInput.value),
+      description: descriptionInput?.value || ''
+    };
+
+    setPPEItems(prev => prev.map(item => 
+      item.id === selectedPPEItem.id ? updatedPPEItem : item
+    ));
+
+    // Atualizar também o nome do EPI nas entregas
+    if (updatedPPEItem.name !== selectedPPEItem.name) {
+      setDeliveries(prev => prev.map(d => 
+        d.ppeId === selectedPPEItem.id 
+          ? { ...d, ppeName: updatedPPEItem.name }
+          : d
+      ));
+    }
+
+    toast({
+      title: "EPI atualizado",
+      description: `O EPI ${updatedPPEItem.name} foi atualizado com sucesso.`
+    });
+
+    setIsEditPPEDialogOpen(false);
   };
 
   const handleDownloadReceipt = (delivery: PPEDelivery) => {
@@ -667,9 +755,21 @@ function PPEManagement(): JSX.Element {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem>Editar</DropdownMenuItem>
-                                <DropdownMenuItem>Ver Histórico</DropdownMenuItem>
-                                <DropdownMenuItem className="text-red-500">Excluir</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleEditPPE(item)}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleViewPPEHistory(item)}>
+                                  <History className="mr-2 h-4 w-4" />
+                                  Ver Histórico
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="text-red-500"
+                                  onClick={() => handleConfirmDeletePPE(item)}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Excluir
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </td>
@@ -708,22 +808,3 @@ function PPEManagement(): JSX.Element {
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
               Tem certeza que deseja excluir este registro de entrega de EPI?
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-500 hover:bg-red-600"
-              onClick={confirmDeletePPE}
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
-  );
-}
-
-export default PPEManagement;
