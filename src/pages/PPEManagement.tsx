@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { usePPEForm } from '@/hooks/use-ppe-form';
+import { usePPEManagement } from '@/hooks/use-ppe-management';
 import {
   Card,
   CardContent,
@@ -24,7 +25,8 @@ import {
   Download,
   Info,
   RefreshCw,
-  Trash2
+  Trash2,
+  FileSpreadsheet
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -55,6 +57,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PPEDetailDialog } from '@/components/ppe/PPEDetailDialog';
 import { PPERenewalDialog } from '@/components/ppe/PPERenewalDialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface PPEItem {
   id: number;
@@ -291,6 +294,42 @@ function PPEManagement(): JSX.Element {
     setIsDeliveryDialogOpen(false);
   };
 
+  const handleDownloadDeliveryTable = () => {
+    // Create CSV content
+    const headers = ['Funcionário', 'Departamento', 'EPI', 'Data Entrega', 'Data Validade', 'Status'];
+    
+    const rows = filteredDeliveries.map(delivery => [
+      delivery.employeeName,
+      delivery.department,
+      delivery.ppeName,
+      new Date(delivery.issueDate).toLocaleDateString('pt-BR'),
+      new Date(delivery.expiryDate).toLocaleDateString('pt-BR'),
+      delivery.status === 'valid' ? 'Válido' : 
+        delivery.status === 'expiring' ? 'A vencer' : 'Vencido'
+    ]);
+    
+    // Combine headers and rows
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+    
+    // Create and download the file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `entregas_epi_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Planilha baixada",
+      description: "A planilha de entregas de EPI foi baixada com sucesso."
+    });
+  };
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
@@ -483,61 +522,71 @@ function PPEManagement(): JSX.Element {
             </TabsList>
 
             <TabsContent value="deliveries" className="m-0">
+              <div className="flex justify-end mb-4">
+                <Button 
+                  variant="outline"
+                  className="flex gap-2"
+                  onClick={handleDownloadDeliveryTable}
+                >
+                  <FileSpreadsheet className="h-4 w-4" /> Baixar Planilha
+                </Button>
+              </div>
+              
               <ScrollArea className="h-[500px]">
                 <div className="relative overflow-x-auto">
-                  <table className="w-full text-sm text-left text-gray-500">
-                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0">
-                      <tr>
-                        <th scope="col" className="px-6 py-3">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>
                           <div className="flex items-center">
                             Funcionário
                             <ArrowUpDown className="ml-1 h-3 w-3" />
                           </div>
-                        </th>
-                        <th scope="col" className="px-6 py-3">
+                        </TableHead>
+                        <TableHead>
                           <div className="flex items-center">
                             Departamento
                             <ArrowUpDown className="ml-1 h-3 w-3" />
                           </div>
-                        </th>
-                        <th scope="col" className="px-6 py-3">
+                        </TableHead>
+                        <TableHead>
                           <div className="flex items-center">
                             EPI
                             <ArrowUpDown className="ml-1 h-3 w-3" />
                           </div>
-                        </th>
-                        <th scope="col" className="px-6 py-3">
+                        </TableHead>
+                        <TableHead>
                           <div className="flex items-center">
                             Entrega
                             <Calendar className="ml-1 h-3 w-3" />
                           </div>
-                        </th>
-                        <th scope="col" className="px-6 py-3">
+                        </TableHead>
+                        <TableHead>
                           <div className="flex items-center">
                             Validade
                             <Calendar className="ml-1 h-3 w-3" />
                           </div>
-                        </th>
-                        <th scope="col" className="px-6 py-3">Status</th>
-                        <th scope="col" className="px-6 py-3">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                        </TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {filteredDeliveries.length > 0 ? (
                         filteredDeliveries.map(delivery => (
-                          <tr key={delivery.id} className="bg-white border-b hover:bg-gray-50">
-                            <td className="px-6 py-4 font-medium text-gray-900">
+                          <TableRow key={delivery.id}>
+                            <TableCell className="font-medium">
                               {delivery.employeeName}
-                            </td>
-                            <td className="px-6 py-4">{delivery.department}</td>
-                            <td className="px-6 py-4">{delivery.ppeName}</td>
-                            <td className="px-6 py-4">
+                            </TableCell>
+                            <TableCell>{delivery.department}</TableCell>
+                            <TableCell>{delivery.ppeName}</TableCell>
+                            <TableCell>
                               {new Date(delivery.issueDate).toLocaleDateString('pt-BR')}
-                            </td>
-                            <td className="px-6 py-4">
+                            </TableCell>
+                            <TableCell>
                               {new Date(delivery.expiryDate).toLocaleDateString('pt-BR')}
-                            </td>
-                            <td className="px-6 py-4">
+                            </TableCell>
+                            <TableCell>
                               {delivery.status === 'valid' && (
                                 <Badge className="bg-safety-green">Válido</Badge>
                               )}
@@ -547,8 +596,8 @@ function PPEManagement(): JSX.Element {
                               {delivery.status === 'expired' && (
                                 <Badge className="bg-safety-red">Vencido</Badge>
                               )}
-                            </td>
-                            <td className="px-6 py-4">
+                            </TableCell>
+                            <TableCell>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" size="sm">
@@ -577,18 +626,18 @@ function PPEManagement(): JSX.Element {
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ))
                       ) : (
-                        <tr>
-                          <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-12 text-gray-500">
                             Nenhuma entrega encontrada
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       )}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               </ScrollArea>
             </TabsContent>
