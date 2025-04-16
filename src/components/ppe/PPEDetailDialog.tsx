@@ -23,6 +23,7 @@ interface PPEDelivery {
   issueDate: string;
   expiryDate: string;
   status: 'valid' | 'expired' | 'expiring';
+  signature: boolean; // Ensure this is included
 }
 
 

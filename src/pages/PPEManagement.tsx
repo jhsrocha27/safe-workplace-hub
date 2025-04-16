@@ -79,6 +79,7 @@ interface PPEDelivery {
   issueDate: string;
   expiryDate: string;
   status: 'valid' | 'expired' | 'expiring';
+  signature: boolean;
 }
 
 interface Employee {
@@ -98,11 +99,11 @@ const ppeData: PPEItem[] = [
 ];
 
 const ppeDeliveryData: PPEDelivery[] = [
-  { id: 1, employeeId: 101, employeeName: 'Carlos Santos', position: 'Operador', department: 'Produção', ppeId: 1, ppeName: 'Capacete de Segurança', issueDate: '2025-01-15', expiryDate: '2026-01-15', status: 'valid' },
-  { id: 2, employeeId: 101, employeeName: 'Carlos Santos', position: 'Operador', department: 'Produção', ppeId: 2, ppeName: 'Protetor Auricular', issueDate: '2025-01-15', expiryDate: '2025-07-15', status: 'expiring' },
-  { id: 3, employeeId: 102, employeeName: 'Ana Ferreira', position: 'Técnica', department: 'Manutenção', ppeId: 3, ppeName: 'Óculos de Proteção', issueDate: '2024-12-10', expiryDate: '2025-06-10', status: 'valid' },
-  { id: 4, employeeId: 103, employeeName: 'Marcos Lima', position: 'Auxiliar', department: 'Logística', ppeId: 4, ppeName: 'Luvas de Segurança', issueDate: '2025-02-05', expiryDate: '2025-05-05', status: 'expiring' },
-  { id: 5, employeeId: 104, employeeName: 'Juliana Costa', position: 'Química', department: 'Laboratório', ppeId: 5, ppeName: 'Máscara PFF2', issueDate: '2025-03-01', expiryDate: '2025-04-01', status: 'expired' },
+  { id: 1, employeeId: 101, employeeName: 'Carlos Santos', position: 'Operador', department: 'Produção', ppeId: 1, ppeName: 'Capacete de Segurança', issueDate: '2025-01-15', expiryDate: '2026-01-15', status: 'valid', signature: false },
+  { id: 2, employeeId: 101, employeeName: 'Carlos Santos', position: 'Operador', department: 'Produção', ppeId: 2, ppeName: 'Protetor Auricular', issueDate: '2025-01-15', expiryDate: '2025-07-15', status: 'expiring', signature: false },
+  { id: 3, employeeId: 102, employeeName: 'Ana Ferreira', position: 'Técnica', department: 'Manutenção', ppeId: 3, ppeName: 'Óculos de Proteção', issueDate: '2024-12-10', expiryDate: '2025-06-10', status: 'valid', signature: true },
+  { id: 4, employeeId: 103, employeeName: 'Marcos Lima', position: 'Auxiliar', department: 'Logística', ppeId: 4, ppeName: 'Luvas de Segurança', issueDate: '2025-02-05', expiryDate: '2025-05-05', status: 'expiring', signature: false },
+  { id: 5, employeeId: 104, employeeName: 'Juliana Costa', position: 'Química', department: 'Laboratório', ppeId: 5, ppeName: 'Máscara PFF2', issueDate: '2025-03-01', expiryDate: '2025-04-01', status: 'expired', signature: true },
 ];
 
 const employeeData: Employee[] = [
@@ -234,7 +235,6 @@ function PPEManagement(): JSX.Element {
     }
   };
 
-  // Função para salvar dados no localStorage
   const updateLocalStorage = (key: string, data: any) => {
     try {
       localStorage.setItem(key, JSON.stringify(data));
@@ -246,7 +246,6 @@ function PPEManagement(): JSX.Element {
   };
 
   const handleSaveDelivery = () => {
-    // Validação imediata dos campos obrigatórios
     if (!formData.employeeName || !formData.ppeName || !formData.issueDate || !formData.expiryDate) {
       toast({
         title: "Erro ao salvar",
@@ -256,7 +255,6 @@ function PPEManagement(): JSX.Element {
       return;
     }
 
-    // Validação da data de validade
     if (new Date(formData.expiryDate) <= new Date(formData.issueDate)) {
       toast({
         title: "Erro ao salvar",
@@ -276,13 +274,13 @@ function PPEManagement(): JSX.Element {
       ppeName: formData.ppeName,
       issueDate: formData.issueDate,
       expiryDate: formData.expiryDate,
-      status: 'valid'
+      status: 'valid',
+      signature: false
     };
 
     const updatedDeliveries = [...deliveries, newDelivery];
     setDeliveries(updatedDeliveries);
 
-    // Salvar no localStorage
     updateLocalStorage('ppeDeliveries', updatedDeliveries);
     
     toast({
@@ -295,7 +293,6 @@ function PPEManagement(): JSX.Element {
   };
 
   const handleDownloadDeliveryTable = () => {
-    // Create CSV content
     const headers = ['Funcionário', 'Departamento', 'EPI', 'Data Entrega', 'Data Validade', 'Status'];
     
     const rows = filteredDeliveries.map(delivery => [
@@ -308,13 +305,11 @@ function PPEManagement(): JSX.Element {
         delivery.status === 'expiring' ? 'A vencer' : 'Vencido'
     ]);
     
-    // Combine headers and rows
     const csvContent = [
       headers.join(','),
       ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
     ].join('\n');
     
-    // Create and download the file
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
