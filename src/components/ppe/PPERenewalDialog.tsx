@@ -130,7 +130,7 @@ export function PPERenewalDialog({ open, onOpenChange, delivery }: PPERenewalDia
             Cancelar
           </Button>
           <Button 
-            className="bg-safety-blue hover:bg-safety-blue/90"
+            className="bg-white hover:bg-white/90 text-black border border-gray-200"
             onClick={handleRenewal}
           >
             Confirmar Renovação

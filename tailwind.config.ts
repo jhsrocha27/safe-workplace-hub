@@ -63,6 +63,10 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
+				tecsafe: {
+					primary: '#1A4235',
+					secondary: '#00A651'
+				},
 				safety: {
 					blue: '#1E88E5',
 					green: '#4CAF50',

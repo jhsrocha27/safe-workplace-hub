@@ -20,6 +20,7 @@ import { format, addDays, isBefore, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { NewTrainingDialog } from '@/components/trainings/NewTrainingDialog';
 import { ScheduleTrainingRecycleDialog } from '@/components/trainings/ScheduleTrainingRecycleDialog';
+import { ScheduleTrainingDialog } from '@/components/trainings/ScheduleTrainingDialog';
 
 // Tipos de dados
 interface Training {
@@ -343,7 +344,7 @@ const Trainings = () => {
             {trainings.map(training => (
               <Card key={training.id} className="relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-2">
-                  <Badge className="bg-safety-blue hover:bg-safety-blue/90">
+                  <Badge className="bg-[#1A4235] hover:bg-[#1A4235]/90">
                     {training.regulation}
                   </Badge>
                 </div>
@@ -377,11 +378,10 @@ const Trainings = () => {
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="flex justify-between">
+                <CardFooter className="flex justify-end">
                   <Button variant="outline" size="sm" className="flex items-center gap-1">
                     <FileCheck className="h-4 w-4" /> Certificados
                   </Button>
-                  <Button className="bg-safety-blue hover:bg-safety-blue/90">Agendar</Button>
                 </CardFooter>
               </Card>
             ))}

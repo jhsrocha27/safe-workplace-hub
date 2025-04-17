@@ -73,9 +73,9 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarContent>
         <div className="p-4">
-          <h1 className="text-2xl font-bold flex items-center text-safety-blue">
-            <Shield className="mr-2" />
-            SafeWork
+          <h1 className="text-2xl font-bold flex items-center gap-2 text-tecsafe-secondary">
+            <img src="/tecsafe-logo.svg" alt="TecSafe" className="h-8 w-8" />
+            TecSafe
           </h1>
         </div>
         <SidebarGroup>
@@ -85,7 +85,7 @@ export function AppSidebar() {
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild className={cn(
-                    location.pathname === item.url ? "bg-blue-100 text-safety-blue" : ""
+                    location.pathname === item.url ? "bg-tecsafe-secondary/20 text-tecsafe-secondary" : "text-black hover:text-tecsafe-secondary"
                   )}>
                     <Link to={item.url}>
                       <item.icon className="h-5 w-5" />

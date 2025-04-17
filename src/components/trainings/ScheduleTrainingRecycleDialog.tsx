@@ -126,7 +126,7 @@ export function ScheduleTrainingRecycleDialog({ employeeName, trainingTitle, onS
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSchedule} className="bg-safety-blue hover:bg-safety-blue/90">
+            <Button onClick={handleSchedule} className="bg-white hover:bg-white/90 text-black border border-gray-200">
               Confirmar Agendamento
             </Button>
           </DialogFooter>

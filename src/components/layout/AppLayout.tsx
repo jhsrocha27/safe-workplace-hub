@@ -11,11 +11,11 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
+      <div className="min-h-screen flex w-full bg-tecsafe-primary">
         <AppSidebar />
         <div className="flex flex-col flex-1">
           <AppHeader />
-          <main className="flex-1 p-4 md:p-6 overflow-auto">
+          <main className="flex-1 p-4 md:p-6 overflow-auto bg-tecsafe-primary">
             {children}
           </main>
         </div>

@@ -201,7 +201,7 @@ export function AppHeader() {
           </Popover>
         </div>
         <Avatar>
-          <div className="bg-safety-blue text-white grid place-items-center text-lg font-semibold h-full">
+          <div className="bg-white text-black border border-gray-200 grid place-items-center text-lg font-semibold h-full">
             TS
           </div>
         </Avatar>

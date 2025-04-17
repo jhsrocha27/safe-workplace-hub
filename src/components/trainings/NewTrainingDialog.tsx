@@ -156,7 +156,7 @@ export function NewTrainingDialog() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="bg-safety-blue hover:bg-safety-blue/90 flex items-center gap-2">
+        <Button className="bg-white hover:bg-white/90 text-black border border-gray-200 flex items-center gap-2">
           <span>Novo Treinamento</span>
         </Button>
       </DialogTrigger>

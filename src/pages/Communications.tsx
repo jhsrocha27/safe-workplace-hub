@@ -192,7 +192,7 @@ const Communications = () => {
         
         <Dialog>
           <DialogTrigger asChild>
-            <Button className="bg-safety-blue hover:bg-safety-blue/90">
+            <Button className="bg-white hover:bg-white/90 text-black border border-gray-200">
               <Plus className="mr-2 h-4 w-4" /> Nova Comunicação
             </Button>
           </DialogTrigger>
@@ -268,7 +268,7 @@ const Communications = () => {
               </div>
             </div>
             <DialogFooter>
-              <Button onClick={handleAddCommunication} className="bg-safety-blue hover:bg-safety-blue/90">Enviar</Button>
+              <Button onClick={handleAddCommunication} className="bg-white hover:bg-white/90 text-black border border-gray-200">Enviar</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

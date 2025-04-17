@@ -114,7 +114,7 @@ const SignatureCanvas: React.FC<SignatureCanvasProps> = ({ onSave }) => {
         <Button
           onClick={saveSignature}
           type="button"
-          className="bg-safety-blue hover:bg-safety-blue/90"
+          className="bg-white hover:bg-white/90 text-black border border-gray-200"
         >
           Confirmar Assinatura
         </Button>

@@ -208,7 +208,7 @@ const Documents = () => {
         
         <Dialog>
           <DialogTrigger asChild>
-            <Button className="bg-safety-blue hover:bg-safety-blue/90">
+            <Button>
               <Plus className="mr-2 h-4 w-4" /> Novo Documento
             </Button>
           </DialogTrigger>
