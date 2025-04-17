@@ -78,11 +78,7 @@ export function PPERenewalDialog({ open, onOpenChange, delivery }: PPERenewalDia
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
-        className="sm:max-w-[525px]"
-        onEscapeKeyDown={handleClose}
-        onPointerDownOutside={handleClose}
-      >
+      <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
           <DialogTitle>Renovar EPI</DialogTitle>
           <DialogDescription>

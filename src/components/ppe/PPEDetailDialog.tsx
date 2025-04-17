@@ -34,7 +34,6 @@ interface PPEDetailDialogProps {
 }
 
 export function PPEDetailDialog({ open, onOpenChange, delivery }: PPEDetailDialogProps) {
-  // Se não houver delivery, retornar null para evitar renderizações desnecessárias
   if (!delivery) {
     return null;
   }
@@ -46,7 +45,7 @@ export function PPEDetailDialog({ open, onOpenChange, delivery }: PPEDetailDialo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]" onEscapeKeyDown={handleClose} onPointerDownOutside={handleClose}>
+      <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
           <DialogTitle>Detalhes do EPI</DialogTitle>
           <DialogDescription>
