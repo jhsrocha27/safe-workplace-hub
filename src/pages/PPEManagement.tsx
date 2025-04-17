@@ -1,8 +1,6 @@
-
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { usePPEForm } from '@/hooks/use-ppe-form';
-import { usePPEManagement } from '@/hooks/use-ppe-management';
 import {
   Card,
   CardContent,
@@ -40,6 +38,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogClose
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -133,7 +132,6 @@ function PPEManagement(): JSX.Element {
   const [deliveries, setDeliveries] = useState<PPEDelivery[]>(ppeDeliveryData);
   const [ppeItems, setPPEItems] = useState<PPEItem[]>(ppeData);
   
-  // Novos estados para o catálogo de EPIs
   const [selectedPPEItem, setSelectedPPEItem] = useState<PPEItem | null>(null);
   const [isEditPPEDialogOpen, setIsEditPPEDialogOpen] = useState(false);
   const [isPPEHistoryDialogOpen, setIsPPEHistoryDialogOpen] = useState(false);
@@ -202,7 +200,6 @@ function PPEManagement(): JSX.Element {
     setDeleteDialogOpen(true);
   };
 
-  // Funções para lidar com ações no catálogo de EPIs
   const handleEditPPE = (item: PPEItem) => {
     setSelectedPPEItem(item);
     setIsEditPPEDialogOpen(true);
@@ -222,7 +219,6 @@ function PPEManagement(): JSX.Element {
     if (selectedPPEItem) {
       setPPEItems(prev => prev.filter(p => p.id !== selectedPPEItem.id));
       
-      // Também remover entregas associadas a este EPI
       setDeliveries(prev => prev.filter(d => d.ppeId !== selectedPPEItem.id));
       
       toast({
@@ -265,7 +261,6 @@ function PPEManagement(): JSX.Element {
       item.id === selectedPPEItem.id ? updatedPPEItem : item
     ));
 
-    // Atualizar também o nome do EPI nas entregas
     if (updatedPPEItem.name !== selectedPPEItem.name) {
       setDeliveries(prev => prev.map(d => 
         d.ppeId === selectedPPEItem.id 
@@ -458,7 +453,9 @@ function PPEManagement(): JSX.Element {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsNewPPEDialogOpen(false)}>Cancelar</Button>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancelar</Button>
+                </DialogClose>
                 <Button 
                   className="bg-safety-blue hover:bg-safety-blue/90"
                   onClick={handleSavePPE}
@@ -547,7 +544,9 @@ function PPEManagement(): JSX.Element {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDeliveryDialogOpen(false)}>Cancelar</Button>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancelar</Button>
+                </DialogClose>
                 <Button 
                   className="bg-safety-blue hover:bg-safety-blue/90"
                   onClick={handleSaveDelivery}
@@ -822,7 +821,6 @@ function PPEManagement(): JSX.Element {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Dialog para editar um EPI */}
       <Dialog open={isEditPPEDialogOpen} onOpenChange={setIsEditPPEDialogOpen}>
         <DialogContent className="sm:max-w-[625px]">
           <DialogHeader>
@@ -877,7 +875,9 @@ function PPEManagement(): JSX.Element {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditPPEDialogOpen(false)}>Cancelar</Button>
+            <DialogClose asChild>
+              <Button variant="outline">Cancelar</Button>
+            </DialogClose>
             <Button 
               className="bg-safety-blue hover:bg-safety-blue/90"
               onClick={handleUpdatePPE}
@@ -888,7 +888,6 @@ function PPEManagement(): JSX.Element {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog para ver histórico de entregas de um EPI */}
       <Dialog open={isPPEHistoryDialogOpen} onOpenChange={setIsPPEHistoryDialogOpen}>
         <DialogContent className="sm:max-w-[700px]">
           <DialogHeader>
@@ -938,12 +937,13 @@ function PPEManagement(): JSX.Element {
             </div>
           </ScrollArea>
           <DialogFooter>
-            <Button onClick={() => setIsPPEHistoryDialogOpen(false)}>Fechar</Button>
+            <DialogClose asChild>
+              <Button>Fechar</Button>
+            </DialogClose>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Dialog para confirmar a exclusão de um EPI */}
       <AlertDialog open={isDeletePPEDialogOpen} onOpenChange={setIsDeletePPEDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogClose
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -113,7 +114,9 @@ export function PPEDetailDialog({ open, onOpenChange, delivery }: PPEDetailDialo
         </div>
         
         <DialogFooter>
-          <Button onClick={() => onOpenChange(false)}>Fechar</Button>
+          <DialogClose asChild>
+            <Button>Fechar</Button>
+          </DialogClose>
         </DialogFooter>
       </DialogContent>
     </Dialog>
