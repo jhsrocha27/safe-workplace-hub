@@ -43,6 +43,7 @@ interface EmployeeTraining {
   expirationDate: Date;
   certificate: string;
   status: 'active' | 'expired' | 'expiring';
+  scheduledRecyclingDate?: Date;
 }
 
 const Trainings = () => {
@@ -98,7 +99,7 @@ const Trainings = () => {
   // Gerar dados de treinamento dos funcionários
   const today = new Date();
   
-  const [employeeTrainings] = useState<EmployeeTraining[]>([
+  const [employeeTrainings, setEmployeeTrainings] = useState<EmployeeTraining[]>([
     {
       id: '1',
       employeeId: 'E001',
@@ -278,6 +279,7 @@ const Trainings = () => {
                 <TableHead>Data de Conclusão</TableHead>
                 <TableHead>Vencimento</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Data da Reciclagem</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -295,9 +297,27 @@ const Trainings = () => {
                     <TableCell>{formatDate(training.expirationDate)}</TableCell>
                     <TableCell>{getStatusBadge(training.status)}</TableCell>
                     <TableCell>
+                      {training.scheduledRecyclingDate ? (
+                        formatDate(training.scheduledRecyclingDate)
+                      ) : (
+                        '-'
+                      )}
+                    </TableCell>
+                    <TableCell>
                       <ScheduleTrainingRecycleDialog 
                         employeeName={training.employeeName}
-                        trainingTitle={training.trainingTitle} 
+                        trainingTitle={training.trainingTitle}
+                        currentRecyclingDate={training.scheduledRecyclingDate}
+                        expirationDate={training.expirationDate}
+                        onSchedule={(date) => {
+                          setEmployeeTrainings(prevTrainings =>
+                            prevTrainings.map(t =>
+                              t.id === training.id
+                                ? { ...t, scheduledRecyclingDate: date }
+                                : t
+                            )
+                          );
+                        }}
                       />
                     </TableCell>
                   </TableRow>

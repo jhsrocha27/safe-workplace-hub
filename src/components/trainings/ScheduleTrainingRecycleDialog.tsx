@@ -16,9 +16,12 @@ import { toast } from '@/hooks/use-toast';
 interface ScheduleTrainingRecycleDialogProps {
   employeeName: string;
   trainingTitle: string;
+  onSchedule?: (date: Date, instructor: string) => void;
+  currentRecyclingDate?: Date;
+  expirationDate?: Date;
 }
 
-export function ScheduleTrainingRecycleDialog({ employeeName, trainingTitle }: ScheduleTrainingRecycleDialogProps) {
+export function ScheduleTrainingRecycleDialog({ employeeName, trainingTitle, onSchedule, currentRecyclingDate, expirationDate }: ScheduleTrainingRecycleDialogProps) {
   const [open, setOpen] = useState(false);
   const [scheduledDate, setScheduledDate] = useState('');
   const [instructor, setInstructor] = useState('');
@@ -33,10 +36,16 @@ export function ScheduleTrainingRecycleDialog({ employeeName, trainingTitle }: S
       return;
     }
     
-    // Here you would typically save this to your backend
+    const recyclingDate = new Date(scheduledDate);
+    
+    // Notify parent component about the new scheduled date and instructor
+    if (onSchedule) {
+      onSchedule(recyclingDate, instructor);
+    }
+
     toast({
       title: "Reciclagem agendada",
-      description: `Reciclagem de ${trainingTitle} para ${employeeName} agendada com sucesso para ${new Date(scheduledDate).toLocaleDateString('pt-BR')}.`,
+      description: `Reciclagem de ${trainingTitle} para ${employeeName} agendada com sucesso para ${recyclingDate.toLocaleDateString('pt-BR')}.`,
     });
     
     setOpen(false);
@@ -76,8 +85,20 @@ export function ScheduleTrainingRecycleDialog({ employeeName, trainingTitle }: S
             </div>
             
             <div className="grid gap-2">
+              {currentRecyclingDate && (
+                <div className="mb-2">
+                  <label className="text-sm text-gray-500">Data de Reciclagem Atual:</label>
+                  <div className="font-medium">{currentRecyclingDate.toLocaleDateString('pt-BR')}</div>
+                </div>
+              )}
+              {expirationDate && (
+                <div className="mb-2">
+                  <label className="text-sm text-gray-500">Data de Vencimento:</label>
+                  <div className="font-medium">{expirationDate.toLocaleDateString('pt-BR')}</div>
+                </div>
+              )}
               <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Data da Reciclagem
+                Nova Data da Reciclagem
               </label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
