@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileCheck } from "lucide-react";
 
 interface PPEDelivery {
   id: number;
@@ -23,9 +22,8 @@ interface PPEDelivery {
   issueDate: string;
   expiryDate: string;
   status: 'valid' | 'expired' | 'expiring';
-  signature: boolean; // Ensure this is included
+  signature: boolean;
 }
-
 
 interface PPEDetailDialogProps {
   open: boolean;
@@ -37,11 +35,6 @@ export function PPEDetailDialog({ open, onOpenChange, delivery }: PPEDetailDialo
   if (!delivery) {
     return null;
   }
-
-  // Função para fechar o diálogo de forma segura
-  const handleClose = () => {
-    onOpenChange(false);
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -120,7 +113,7 @@ export function PPEDetailDialog({ open, onOpenChange, delivery }: PPEDetailDialo
         </div>
         
         <DialogFooter>
-          <Button onClick={handleClose}>Fechar</Button>
+          <Button onClick={() => onOpenChange(false)}>Fechar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

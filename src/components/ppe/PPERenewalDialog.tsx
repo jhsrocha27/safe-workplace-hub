@@ -51,11 +51,6 @@ export function PPERenewalDialog({ open, onOpenChange, delivery }: PPERenewalDia
   
   if (!delivery) return null;
   
-  // Função segura para fechar o diálogo
-  const handleClose = () => {
-    onOpenChange(false);
-  };
-  
   const handleRenewal = () => {
     if (!newExpiryDate) {
       toast({
@@ -73,7 +68,7 @@ export function PPERenewalDialog({ open, onOpenChange, delivery }: PPERenewalDia
       description: `O ${delivery.ppeName} de ${delivery.employeeName} foi renovado com sucesso até ${new Date(newExpiryDate).toLocaleDateString('pt-BR')}`,
     });
     
-    handleClose();
+    onOpenChange(false);
   };
   
   return (
@@ -131,7 +126,7 @@ export function PPERenewalDialog({ open, onOpenChange, delivery }: PPERenewalDia
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
           <Button 
