@@ -74,7 +74,7 @@ export function AppSidebar() {
       <SidebarContent>
         <div className="p-4">
           <h1 className="text-2xl font-bold flex items-center gap-2 text-tecsafe-secondary">
-            <img src="/tecsafe-logo.svg" alt="TecSafe" className="h-8 w-8" />
+            <img src="/icons/tecsafe-logo.png" alt="TecSafe" className="h-8 w-8" />
             TecSafe
           </h1>
         </div>

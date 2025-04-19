@@ -9,9 +9,9 @@ import {
   AlertTriangle,
   Plus,
   Search,
-  FileCheck,
   CalendarCheck
 } from 'lucide-react';
+import { CertificateDialog } from '@/components/trainings/CertificateDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -379,9 +379,11 @@ const Trainings = () => {
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-end">
-                  <Button variant="outline" size="sm" className="flex items-center gap-1">
-                    <FileCheck className="h-4 w-4" /> Certificados
-                  </Button>
+                  <CertificateDialog
+                    trainingTitle={training.title}
+                    regulation={training.regulation}
+                    duration={training.duration}
+                  />
                 </CardFooter>
               </Card>
             ))}
