@@ -247,7 +247,7 @@ export default function Inspections() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Inspeções</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-white">Inspeções</h1>
           <p className="text-muted-foreground">
             Gerencie inspeções de segurança, ambientais e de qualidade.
           </p>

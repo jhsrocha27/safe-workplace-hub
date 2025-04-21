@@ -203,7 +203,7 @@ const Trainings = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold tracking-tight">Gestão de Treinamentos</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-white">Gestão de Treinamentos</h1>
         <div className="flex space-x-2">
           <Button variant="outline" className="flex items-center gap-2">
             <Search className="h-4 w-4" /> Buscar

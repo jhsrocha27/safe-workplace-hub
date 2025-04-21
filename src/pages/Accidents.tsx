@@ -81,7 +81,7 @@ const Accidents = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Gestão de Acidentes e Quase-Acidentes</h1>
+        <h1 className="text-2xl font-bold text-white">Gestão de Acidentes e Quase-Acidentes</h1>
         <Button className="bg-white hover:bg-white/90 text-black border border-gray-200">
           <Plus className="mr-2 h-4 w-4" /> Novo Registro
         </Button>
