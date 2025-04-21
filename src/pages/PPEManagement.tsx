@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { calculatePPEStatus, formatExpiryDate } from '@/utils/ppe-status';
 import { useToast } from "@/hooks/use-toast";
 import { usePPEForm } from '@/hooks/use-ppe-form';
 import {
@@ -330,7 +331,7 @@ function PPEManagement(): JSX.Element {
   };
 
   const handleSaveDelivery = () => {
-    if (!formData.employeeName || !formData.ppeName || !formData.issueDate || !formData.expiryDate) {
+    if (!formData.employeeName || !formData.ppeName || !formData.issueDate) {
       toast({
         title: "Erro ao salvar",
         description: "Por favor, preencha todos os campos obrigatórios.",
@@ -339,14 +340,22 @@ function PPEManagement(): JSX.Element {
       return;
     }
 
-    if (new Date(formData.expiryDate) <= new Date(formData.issueDate)) {
+    // Encontra o EPI selecionado para obter o período de validade
+    const selectedPPE = ppeData.find(ppe => ppe.name === formData.ppeName);
+    if (!selectedPPE) {
       toast({
         title: "Erro ao salvar",
-        description: "A data de validade deve ser posterior à data de entrega.",
+        description: "EPI não encontrado.",
         variant: "destructive"
       });
       return;
     }
+
+    // Calcula a data de vencimento baseada na data de entrega e período de validade do EPI
+    const issueDate = new Date(formData.issueDate);
+    const expiryDate = new Date(issueDate);
+    expiryDate.setMonth(expiryDate.getMonth() + selectedPPE.validityPeriod);
+    const expiryDateStr = expiryDate.toISOString().split('T')[0];
 
     const newDelivery: PPEDelivery = {
       id: deliveries.length + 1,
@@ -357,8 +366,8 @@ function PPEManagement(): JSX.Element {
       ppeId: ppeData.find(ppe => ppe.name === formData.ppeName)?.id || 0,
       ppeName: formData.ppeName,
       issueDate: formData.issueDate,
-      expiryDate: formData.expiryDate,
-      status: 'valid',
+      expiryDate: expiryDateStr,
+      status: calculatePPEStatus(formData.issueDate, selectedPPE.validityPeriod).status,
       signature: false
     };
 
@@ -511,27 +520,24 @@ function PPEManagement(): JSX.Element {
                       <SelectContent>
                         {ppeData.map((ppe) => (
                           <SelectItem key={ppe.id} value={ppe.name}>
-                            {ppe.name} - {ppe.ca}
+                            {ppe.name} - {ppe.ca} (Validade: {ppe.validityPeriod} meses)
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
+                  <div className="col-span-2">
                     <label className="block text-sm font-medium mb-1">Data de Entrega</label>
                     <Input 
                       type="date"
                       value={formData.issueDate}
                       onChange={(e) => setField('issueDate', e.target.value)}
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Validade</label>
-                    <Input 
-                      type="date"
-                      value={formData.expiryDate}
-                      onChange={(e) => setField('expiryDate', e.target.value)}
-                    />
+                    {formData.ppeName && formData.issueDate && (
+                      <p className="text-sm text-gray-500 mt-1">
+                        Data de vencimento calculada: {formatExpiryDate(formData.issueDate, ppeData.find(ppe => ppe.name === formData.ppeName)?.validityPeriod || 0)}
+                      </p>
+                    )}
                   </div>
                   <div className="col-span-2">
                     <label className="block text-sm font-medium mb-1">Observações</label>
@@ -643,12 +649,7 @@ function PPEManagement(): JSX.Element {
                             <Calendar className="ml-1 h-3 w-3" />
                           </div>
                         </TableHead>
-                        <TableHead>
-                          <div className="flex items-center">
-                            Validade
-                            <Calendar className="ml-1 h-3 w-3" />
-                          </div>
-                        </TableHead>
+
                         <TableHead>Status</TableHead>
                         <TableHead>Ações</TableHead>
                       </TableRow>
@@ -665,9 +666,7 @@ function PPEManagement(): JSX.Element {
                             <TableCell>
                               {new Date(delivery.issueDate).toLocaleDateString('pt-BR')}
                             </TableCell>
-                            <TableCell>
-                              {new Date(delivery.expiryDate).toLocaleDateString('pt-BR')}
-                            </TableCell>
+
                             <TableCell>
                               {delivery.status === 'valid' && (
                                 <Badge className="bg-safety-green">Válido</Badge>

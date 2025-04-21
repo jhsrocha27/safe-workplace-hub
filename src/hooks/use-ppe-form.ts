@@ -1,5 +1,49 @@
 import { useReducer } from 'react';
 
+// Função auxiliar para obter o período de validade do EPI
+function getValidityPeriod(ppeName: string): number {
+  // Normaliza o nome do EPI removendo acentos e convertendo para minúsculas
+  const normalizedPPEName = ppeName.toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  // Lista de EPIs com suas variações de nome e períodos de validade
+  const ppeData = [
+    {
+      variations: ['capacete de seguranca', 'capacete', 'capacete de protecao'],
+      validityPeriod: 12
+    },
+    {
+      variations: ['protetor auricular', 'protetor de ouvido', 'abafador'],
+      validityPeriod: 6
+    },
+    {
+      variations: ['oculos de protecao', 'oculos de seguranca', 'oculos'],
+      validityPeriod: 6
+    },
+    {
+      variations: ['luvas de seguranca', 'luvas', 'luva de protecao'],
+      validityPeriod: 3
+    },
+    {
+      variations: ['mascara pff2', 'respirador pff2', 'pff2'],
+      validityPeriod: 1
+    }
+  ];
+
+  // Busca o EPI que corresponde ao nome fornecido
+  const ppe = ppeData.find(item =>
+    item.variations.some(variation => normalizedPPEName.includes(variation))
+  );
+
+  if (!ppe) {
+    console.warn(`EPI não encontrado: ${ppeName}`);
+    return 0;
+  }
+
+  return ppe.validityPeriod;
+}
+
 interface PPEFormState {
   employeeName: string;
   ppeName: string;
@@ -16,7 +60,7 @@ interface PPEFormState {
 }
 
 type PPEFormAction =
-  | { type: 'SET_FIELD'; field: keyof Omit<PPEFormState, 'isValid' | 'errors'>; value: string }
+  | { type: 'SET_FIELD'; field: keyof Omit<PPEFormState, 'isValid' | 'errors'>; value: string; errors?: PPEFormState['errors'] }
   | { type: 'RESET_FORM' }
   | { type: 'VALIDATE_FORM' };
 
@@ -33,13 +77,42 @@ const initialState: PPEFormState = {
 function formReducer(state: PPEFormState, action: PPEFormAction): PPEFormState {
   switch (action.type) {
     case 'SET_FIELD':
-      return {
+      const newState = {
         ...state,
         [action.field]: action.value,
         errors: {
           ...state.errors,
-          [action.field]: undefined
+          [action.field]: undefined,
+          ...(action.errors || {})
         }
+      };
+      
+      // Validação imediata do campo alterado
+      const fieldErrors: PPEFormState['errors'] = {};
+      
+      if (action.field === 'employeeName' && !action.value.trim()) {
+        fieldErrors.employeeName = 'Nome do funcionário é obrigatório';
+      }
+      
+      if (action.field === 'ppeName' && !action.value.trim()) {
+        fieldErrors.ppeName = 'EPI é obrigatório';
+      }
+      
+      if (action.field === 'issueDate') {
+        if (!action.value.trim()) {
+          fieldErrors.issueDate = 'Data de entrega é obrigatória';
+        } else {
+          const date = new Date(action.value);
+          if (isNaN(date.getTime())) {
+            fieldErrors.issueDate = 'Data de entrega inválida';
+          }
+        }
+      }
+      
+      return {
+        ...newState,
+        errors: { ...newState.errors, ...fieldErrors, ...(action.errors || {}) },
+        isValid: Object.keys(fieldErrors).length === 0 && Object.keys(action.errors || {}).length === 0
       };
 
     case 'RESET_FORM':
@@ -60,12 +133,6 @@ function formReducer(state: PPEFormState, action: PPEFormAction): PPEFormState {
         errors.issueDate = 'Data de entrega é obrigatória';
       }
       
-      if (!state.expiryDate.trim()) {
-        errors.expiryDate = 'Data de validade é obrigatória';
-      } else if (new Date(state.expiryDate) <= new Date(state.issueDate)) {
-        errors.expiryDate = 'ERRO: A data de validade deve ser posterior à data de entrega. Por favor, selecione uma data de validade que seja maior que a data de entrega.';
-      }
-      
       return {
         ...state,
         errors,
@@ -83,15 +150,96 @@ export function usePPEForm() {
 
   const setField = (field: keyof Omit<PPEFormState, 'isValid' | 'errors'>, value: string) => {
     let formattedValue = value;
+    let additionalUpdates = {};
+    let fieldErrors: PPEFormState['errors'] = {};
     
-    if (field === 'issueDate' || field === 'expiryDate') {
-      const date = new Date(value);
-      if (!isNaN(date.getTime())) {
-        formattedValue = date.toISOString().split('T')[0];
+    if (field === 'ppeName') {
+      // Quando um EPI é selecionado, calcula a data de validade se houver uma data de entrega
+      if (state.issueDate) {
+        try {
+          const validityPeriod = getValidityPeriod(value);
+          if (validityPeriod > 0) {
+            const issueDate = new Date(state.issueDate);
+            
+            // Valida se a data de entrega é válida
+            if (isNaN(issueDate.getTime())) {
+              fieldErrors.issueDate = 'Data de entrega inválida';
+              fieldErrors.expiryDate = 'Não é possível calcular a data de validade';
+            } else {
+              const expiryDate = new Date(issueDate);
+              expiryDate.setMonth(expiryDate.getMonth() + validityPeriod);
+              
+              // Garante que a data de validade seja válida
+              if (isNaN(expiryDate.getTime())) {
+                fieldErrors.expiryDate = 'Erro ao calcular a data de validade';
+                console.error('Erro ao calcular data de validade:', {
+                  issueDate: state.issueDate,
+                  validityPeriod,
+                  ppeName: value
+                });
+              } else {
+                additionalUpdates = {
+                  expiryDate: expiryDate.toISOString().split('T')[0]
+                };
+              }
+            }
+          } else {
+            fieldErrors.expiryDate = 'Período de validade não encontrado para este EPI';
+          }
+        } catch (error) {
+          console.error('Erro ao processar data de validade:', error);
+          fieldErrors.expiryDate = 'Erro ao calcular a data de validade';
+        }
+      }
+    } else if (field === 'issueDate') {
+      try {
+        const date = new Date(value);
+        if (isNaN(date.getTime())) {
+          fieldErrors.issueDate = 'Data de entrega inválida';
+          fieldErrors.expiryDate = 'Não é possível calcular a data de validade';
+        } else {
+          formattedValue = date.toISOString().split('T')[0];
+          
+          // Se já houver um EPI selecionado, calcula a data de validade
+          if (state.ppeName) {
+            const validityPeriod = getValidityPeriod(state.ppeName);
+            if (validityPeriod > 0) {
+              const expiryDate = new Date(date);
+              expiryDate.setMonth(expiryDate.getMonth() + validityPeriod);
+              
+              // Garante que a data de validade seja válida
+              if (isNaN(expiryDate.getTime())) {
+                fieldErrors.expiryDate = 'Erro ao calcular a data de validade';
+                console.error('Erro ao calcular data de validade:', {
+                  issueDate: value,
+                  validityPeriod,
+                  ppeName: state.ppeName
+                });
+              } else {
+                additionalUpdates = {
+                  expiryDate: expiryDate.toISOString().split('T')[0]
+                };
+              }
+            } else {
+              fieldErrors.expiryDate = 'Período de validade não encontrado para este EPI';
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao processar data:', error);
+        fieldErrors.issueDate = 'Data de entrega inválida';
+        fieldErrors.expiryDate = 'Não é possível calcular a data de validade';
       }
     }
     
-    dispatch({ type: 'SET_FIELD', field, value: formattedValue });
+    dispatch({ type: 'SET_FIELD', field, value: formattedValue, errors: fieldErrors });
+    
+    // Atualiza a data de validade se necessário
+    if (Object.keys(additionalUpdates).length > 0) {
+      Object.entries(additionalUpdates).forEach(([field, value]) => {
+        dispatch({ type: 'SET_FIELD', field: field as keyof Omit<PPEFormState, 'isValid' | 'errors'>, value });
+      });
+    }
   };
 
   const resetForm = () => {
