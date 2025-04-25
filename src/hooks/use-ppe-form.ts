@@ -45,6 +45,11 @@ function getValidityPeriod(ppeName: string): number {
 }
 
 interface PPEFormState {
+  description: string;
+  name: string;
+  ca: string;
+  type: string;
+  validity_period: number;
   employeeName: string;
   ppeName: string;
   issueDate: string;
@@ -56,6 +61,11 @@ interface PPEFormState {
     ppeName?: string;
     issueDate?: string;
     expiryDate?: string;
+    name?: string;
+    ca?: string;
+    type?: string;
+    validity_period?: string;
+    description?: string;
   };
 }
 
@@ -70,6 +80,11 @@ const initialState: PPEFormState = {
   issueDate: '',
   expiryDate: '',
   observations: '',
+  description: '',
+  name: '',
+  ca: '',
+  type: '',
+  validity_period: 0,
   isValid: false,
   errors: {}
 };
@@ -237,7 +252,9 @@ export function usePPEForm() {
     // Atualiza a data de validade se necessário
     if (Object.keys(additionalUpdates).length > 0) {
       Object.entries(additionalUpdates).forEach(([field, value]) => {
-        dispatch({ type: 'SET_FIELD', field: field as keyof Omit<PPEFormState, 'isValid' | 'errors'>, value });
+        if (field === 'expiryDate') {
+          dispatch({ type: 'SET_FIELD', field: 'expiryDate', value });
+        }
       });
     }
   };

@@ -3,21 +3,25 @@ import { useReducer, useCallback } from 'react';
 interface PPEItem {
   id: number;
   name: string;
-  ca: string;
   type: string;
-  validityPeriod: number;
-  description: string;
+  ca_number: string;
+  validity_date: string;
+  quantity: number;
+  created_at?: string;
 }
 
-interface PPEDelivery {
+export interface PPEDelivery {
   id: number;
-  employeeId: number;
+  ppe_id: number;
+  employee_id: number;
+  delivery_date: string;
+  quantity: number;
+  created_at?: string;
+  // Campos estendidos para UI
   employeeName: string;
   position: string;
   department: string;
-  ppeId: number;
   ppeName: string;
-  issueDate: string;
   expiryDate: string;
   status: 'valid' | 'expired' | 'expiring';
   signature: boolean;
@@ -27,7 +31,7 @@ interface PPEState {
   deliveries: PPEDelivery[];
   selectedDelivery: PPEDelivery | null;
   searchTerm: string;
-  currentTab: string;
+  currentTab: 'deliveries' | 'inventory' | 'reports';
   dialogStates: {
     detail: boolean;
     renewal: boolean;
@@ -43,14 +47,14 @@ type PPEAction =
   | { type: 'DELETE_DELIVERY'; id: number }
   | { type: 'SET_SELECTED_DELIVERY'; delivery: PPEDelivery | null }
   | { type: 'SET_SEARCH_TERM'; term: string }
-  | { type: 'SET_CURRENT_TAB'; tab: string }
+  | { type: 'SET_CURRENT_TAB'; tab: 'deliveries' | 'inventory' | 'reports' }
   | { type: 'SET_DIALOG_STATE'; dialog: keyof PPEState['dialogStates']; isOpen: boolean };
 
 const initialState: PPEState = {
   deliveries: [],
   selectedDelivery: null,
   searchTerm: '',
-  currentTab: 'deliveries',
+  currentTab: 'deliveries' as const,
   dialogStates: {
     detail: false,
     renewal: false,
@@ -114,11 +118,21 @@ export function usePPEManagement(initialDeliveries: PPEDelivery[]) {
   });
 
   const filteredDeliveries = useCallback(() => {
-    return state.deliveries.filter(delivery =>
-      delivery.employeeName.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
-      delivery.ppeName.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
-      delivery.department.toLowerCase().includes(state.searchTerm.toLowerCase())
-    );
+    const now = new Date();
+    return state.deliveries.filter(delivery => {
+      const matchesSearch = 
+        delivery.employeeName.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
+        delivery.ppeName.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
+        delivery.department.toLowerCase().includes(state.searchTerm.toLowerCase());
+      
+      const expiryDate = new Date(delivery.expiryDate);
+      const daysUntilExpiry = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      
+      delivery.status = daysUntilExpiry <= 0 ? 'expired' :
+                       daysUntilExpiry <= 30 ? 'expiring' : 'valid';
+      
+      return matchesSearch;
+    });
   }, [state.deliveries, state.searchTerm]);
 
   const addDelivery = useCallback((delivery: PPEDelivery) => {
@@ -141,7 +155,7 @@ export function usePPEManagement(initialDeliveries: PPEDelivery[]) {
     dispatch({ type: 'SET_SEARCH_TERM', term });
   }, []);
 
-  const setCurrentTab = useCallback((tab: string) => {
+  const setCurrentTab = useCallback((tab: 'deliveries' | 'inventory' | 'reports') => {
     dispatch({ type: 'SET_CURRENT_TAB', tab });
   }, []);
 
