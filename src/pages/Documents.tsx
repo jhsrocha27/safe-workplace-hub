@@ -140,7 +140,6 @@ export default function Documents() {
   const handleSaveDocument = () => {
     const missingFields = [];
     
-    if (!formData.type || formData.type === 'Selecione o tipo') missingFields.push('Tipo de documento');
     if (!formData.company?.trim()) missingFields.push('Empresa');
     if (!formData.sector?.trim()) missingFields.push('Setor');
     if (!formData.expiryDate) missingFields.push('Data de validade');
@@ -299,37 +298,37 @@ export default function Documents() {
                   className="col-span-3"
                 />
               </div>
+
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="type" className="text-right font-medium">Tipo de Documento</Label>
+                <Label htmlFor="linkTo" className="text-right font-medium">Vínculo do Documento</Label>
                 <select
-                  id="type"
+                  id="linkTo"
                   className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  value={formData.linkTo}
+                  onChange={(e) => setFormData({ ...formData, linkTo: e.target.value as 'company' | 'employee' })}
                 >
-                  <option value="">Selecione o tipo</option>
-                  <option value="ASO">ASO</option>
-                  <option value="PPRA">PPRA</option>
-                  <option value="PCMSO">PCMSO</option>
-                  <option value="LTCAT">LTCAT</option>
+                  <option value="company">Empresa</option>
+                  <option value="employee">Funcionário</option>
                 </select>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="employee" className="text-right font-medium">Funcionário</Label>
-                <select
-                  id="employee"
-                  className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  value={formData.employee}
-                  onChange={(e) => setFormData({ ...formData, employee: e.target.value })}
-                >
-                  <option value="">Selecione o funcionário</option>
-                  <option value="João Silva">João Silva</option>
-                  <option value="Maria Oliveira">Maria Oliveira</option>
-                  <option value="Carlos Ferreira">Carlos Ferreira</option>
-                  <option value="Ana Oliveira">Ana Oliveira</option>
-                  <option value="Pedro Santos">Pedro Santos</option>
-                </select>
-              </div>
+              {formData.linkTo === 'employee' && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="employee" className="text-right font-medium">Funcionário</Label>
+                  <select
+                    id="employee"
+                    className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    value={formData.employee}
+                    onChange={(e) => setFormData({ ...formData, employee: e.target.value })}
+                  >
+                    <option value="">Selecione o funcionário</option>
+                    <option value="João Silva">João Silva</option>
+                    <option value="Maria Oliveira">Maria Oliveira</option>
+                    <option value="Carlos Ferreira">Carlos Ferreira</option>
+                    <option value="Ana Oliveira">Ana Oliveira</option>
+                    <option value="Pedro Santos">Pedro Santos</option>
+                  </select>
+                </div>
+              )}
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="company" className="text-right font-medium">Empresa</Label>
                 <Input
