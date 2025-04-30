@@ -36,9 +36,8 @@ export function ScheduleTrainingRecycleDialog({ employeeName, trainingTitle, onS
       return;
     }
     
-    // Ajusta a data para considerar o fuso horário local
-    const [year, month, day] = scheduledDate.split('-').map(Number);
-    const recyclingDate = new Date(year, month - 1, day);
+    // Mantém a data exatamente como selecionada
+    const recyclingDate = new Date(scheduledDate + 'T00:00:00');
     
     // Notify parent component about the new scheduled date and instructor
     if (onSchedule) {

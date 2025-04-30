@@ -48,6 +48,14 @@ interface EmployeeTraining {
 }
 
 const Trainings = () => {
+  // Referência para a tabela de registros
+  const registrosRef = React.useRef<HTMLDivElement>(null);
+
+  // Função para rolar até a tabela de registros
+  const scrollToRegistros = () => {
+    registrosRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   // Estado para dados de exemplo
   const [trainings] = useState<Training[]>([
     {
@@ -175,11 +183,28 @@ const Trainings = () => {
     },
   ]);
 
+  // Estado para controle do filtro de visualização
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'active' | 'expiring' | 'expired'>('all');
+
   // Estatísticas dos treinamentos
   const totalTrainings = employeeTrainings.length;
   const expiredTrainings = employeeTrainings.filter(t => t.status === 'expired').length;
   const expiringTrainings = employeeTrainings.filter(t => t.status === 'expiring').length;
   const activeTrainings = employeeTrainings.filter(t => t.status === 'active').length;
+
+  // Função para filtrar treinamentos baseado no status selecionado
+  const getFilteredTrainings = () => {
+    switch (selectedFilter) {
+      case 'active':
+        return employeeTrainings.filter(t => t.status === 'active');
+      case 'expiring':
+        return employeeTrainings.filter(t => t.status === 'expiring');
+      case 'expired':
+        return employeeTrainings.filter(t => t.status === 'expired');
+      default:
+        return employeeTrainings;
+    }
+  };
 
   // Função para formatar data em português
   const formatDate = (date: Date) => {
@@ -205,16 +230,19 @@ const Trainings = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold tracking-tight text-white">Gestão de Treinamentos</h1>
         <div className="flex space-x-2">
-          <Button variant="outline" className="flex items-center gap-2">
-            <Search className="h-4 w-4" /> Buscar
-          </Button>
           <NewTrainingDialog />
         </div>
       </div>
 
       {/* Dashboard de Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+        <Card 
+          className="cursor-pointer transition-colors hover:bg-accent"
+          onClick={() => {
+            setSelectedFilter('all');
+            scrollToRegistros();
+          }}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Treinamentos</CardTitle>
             <BookOpen className="h-4 w-4 text-safety-blue" />
@@ -225,7 +253,13 @@ const Trainings = () => {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card 
+          className="cursor-pointer transition-colors hover:bg-accent"
+          onClick={() => {
+            setSelectedFilter('active');
+            scrollToRegistros();
+          }}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Treinamentos Válidos</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-600" />
@@ -236,7 +270,13 @@ const Trainings = () => {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card 
+          className="cursor-pointer transition-colors hover:bg-accent"
+          onClick={() => {
+            setSelectedFilter('expiring');
+            scrollToRegistros();
+          }}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Expirando em 30 dias</CardTitle>
             <Clock className="h-4 w-4 text-yellow-600" />
@@ -247,7 +287,13 @@ const Trainings = () => {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card 
+          className="cursor-pointer transition-colors hover:bg-accent"
+          onClick={() => {
+            setSelectedFilter('expired');
+            scrollToRegistros();
+          }}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Treinamentos Vencidos</CardTitle>
             <AlertTriangle className="h-4 w-4 text-red-600" />
@@ -392,7 +438,7 @@ const Trainings = () => {
       </Card>
 
       {/* Todos os Treinamentos de Funcionários */}
-      <Card>
+      <Card ref={registrosRef}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-safety-blue" />
@@ -416,7 +462,7 @@ const Trainings = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {employeeTrainings.map(training => (
+              {getFilteredTrainings().map(training => (
                 <TableRow key={training.id}>
                   <TableCell className="font-medium">{training.employeeName}</TableCell>
                   <TableCell>{training.role}</TableCell>
