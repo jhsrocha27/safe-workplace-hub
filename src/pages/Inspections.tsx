@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -265,11 +264,11 @@ export default function Inspections() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge variant="success" className="bg-green-500">Concluída</Badge>;
+        return <Badge variant="completed">Concluída</Badge>;
       case 'pending':
-        return <Badge variant="warning" className="bg-yellow-500">Pendente</Badge>;
+        return <Badge variant="pending">Pendente</Badge>;
       case 'in_progress':
-        return <Badge variant="info" className="bg-blue-500">Em Progresso</Badge>;
+        return <Badge variant="inProgress">Em Progresso</Badge>;
       default:
         return <Badge>Desconhecido</Badge>;
     };
@@ -507,11 +506,7 @@ export default function Inspections() {
                         <h3 className="font-semibold">{inspection.title}</h3>
                         <p className="text-sm text-muted-foreground">{inspection.location}</p>
                       </div>
-                      <Badge
-                        variant={inspection.status === 'completed' ? 'default' : 'secondary'}
-                      >
-                        {getStatusDisplay(inspection.status)}
-                      </Badge>
+                      {getStatusBadge(inspection.status)}
                     </div>
                   <div className="space-y-2">
                     <div className="text-sm">

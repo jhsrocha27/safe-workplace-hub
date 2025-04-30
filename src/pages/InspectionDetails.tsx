@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -57,6 +58,24 @@ export function InspectionDetails() {
     return <div>Carregando...</div>;
   }
 
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case 'completed': return 'completed';
+      case 'pending': return 'pending';
+      case 'in_progress': return 'inProgress';
+      default: return 'default';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'completed': return 'Concluída';
+      case 'pending': return 'Pendente';
+      case 'in_progress': return 'Em Progresso';
+      default: return status;
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -74,14 +93,8 @@ export function InspectionDetails() {
                 Inspeção realizada em {format(inspection.date, 'dd/MM/yyyy', { locale: ptBR })}
               </p>
             </div>
-            <Badge
-              variant={inspection.status === 'completed' ? 'success' : 
-                     inspection.status === 'pending' ? 'warning' : 
-                     'info'}
-            >
-              {inspection.status === 'completed' ? 'Concluída' : 
-               inspection.status === 'pending' ? 'Pendente' : 
-               'Em Progresso'}
+            <Badge variant={getStatusVariant(inspection.status)}>
+              {getStatusLabel(inspection.status)}
             </Badge>
           </div>
         </CardHeader>
