@@ -8,7 +8,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { ClipboardCheck, Search, Plus, AlertTriangle, CheckCircle, Filter, CalendarIcon } from "lucide-react";
+import { ClipboardCheck, Search, Plus, AlertTriangle, CheckCircle, Filter, CalendarIcon, FileText } from "lucide-react";
+import { InspectionReportDialog } from "@/components/inspections/InspectionReportDialog";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -24,12 +25,20 @@ interface Inspection {
   id: string;
   title: string;
   type: 'safety' | 'environmental' | 'quality';
-  status: 'pending' | 'completed' | 'failed';
+  status: 'pending' | 'in_progress' | 'completed';
   priority: 'high' | 'medium' | 'low';
   location: string;
   date: Date;
   inspector: string;
   findings: string[];
+  hasReport?: boolean;
+  reportPdfUrl?: string;
+  report?: {
+    generalObservations: string;
+    nonConformities: string;
+    correctiveActions: string;
+    recommendations: string;
+  };
 }
 
 // Mock data for inspections
@@ -43,7 +52,9 @@ const mockInspections: Inspection[] = [
     location: 'Bloco A - Andar 1',
     date: new Date('2025-04-05'),
     inspector: 'Carlos Silva',
-    findings: ['Extintor 3 com pressão abaixo do recomendado', 'Sinalização adequada em todos os pontos']
+    findings: ['Extintor 3 com pressão abaixo do recomendado', 'Sinalização adequada em todos os pontos'],
+    hasReport: true,
+    reportPdfUrl: 'https://example.com/reports/inspection-1.pdf'
   },
   {
     id: '2',
@@ -60,7 +71,7 @@ const mockInspections: Inspection[] = [
     id: '3',
     title: 'Inspeção de descarte de resíduos',
     type: 'environmental',
-    status: 'failed',
+    status: 'in_progress',
     priority: 'medium',
     location: 'Depósito Central',
     date: new Date('2025-04-08'),
@@ -76,7 +87,9 @@ const mockInspections: Inspection[] = [
     location: 'Setor Administrativo',
     date: new Date('2025-04-01'),
     inspector: 'Regina Santos',
-    findings: ['3 cadeiras inadequadas identificadas', 'Ajuste de altura de monitores recomendado']
+    findings: ['3 cadeiras inadequadas identificadas', 'Ajuste de altura de monitores recomendado'],
+    hasReport: true,
+    reportPdfUrl: 'https://example.com/reports/inspection-4.pdf'
   },
   {
     id: '5',
@@ -96,7 +109,7 @@ const stats = [
   { title: "Total de Inspeções", value: "156" },
   { title: "Concluídas", value: "112" },
   { title: "Pendentes", value: "28" },
-  { title: "Falhas", value: "16" },
+  { title: "Em Progresso", value: "16" },
 ];
 
 // Inspection areas for filter
@@ -153,7 +166,17 @@ export default function Inspections() {
     total: filteredInspections.length,
     completed: filteredInspections.filter(i => i.status === 'completed').length,
     pending: filteredInspections.filter(i => i.status === 'pending').length,
-    failed: filteredInspections.filter(i => i.status === 'failed').length,
+    inProgress: filteredInspections.filter(i => i.status === 'in_progress').length,
+  };
+
+  // Status mapping for display
+  const getStatusDisplay = (status: string) => {
+    switch (status) {
+      case 'completed': return 'Concluída';
+      case 'pending': return 'Pendente';
+      case 'in_progress': return 'Em Progresso';
+      default: return status;
+    }
   };
 
   // Handler for creating a new inspection
@@ -222,8 +245,8 @@ export default function Inspections() {
         return <Badge className="bg-green-500">Concluída</Badge>;
       case 'pending':
         return <Badge className="bg-yellow-500">Pendente</Badge>;
-      case 'failed':
-        return <Badge className="bg-red-500">Falha</Badge>;
+      case 'in_progress':
+        return <Badge className="bg-blue-500">Em Progresso</Badge>;
       default:
         return <Badge>Desconhecido</Badge>;
     }
@@ -412,9 +435,9 @@ export default function Inspections() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Todos">Todos</SelectItem>
-                  <SelectItem value="Completed">Concluídas</SelectItem>
-                  <SelectItem value="Pending">Pendentes</SelectItem>
-                  <SelectItem value="Failed">Falhas</SelectItem>
+                  <SelectItem value="completed">Concluídas</SelectItem>
+                  <SelectItem value="pending">Pendentes</SelectItem>
+                  <SelectItem value="in_progress">Em Progresso</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -480,8 +503,8 @@ export default function Inspections() {
                           </ul>
                         </>
                       )}
-                      {inspection.status === 'pending' && (
-                        <div className="flex justify-end gap-2 mt-3">
+                      <div className="flex justify-end gap-2 mt-3">
+                        {inspection.status === 'pending' && (
                           <Button 
                             variant="outline" 
                             size="sm"
@@ -501,8 +524,21 @@ export default function Inspections() {
                             <CheckCircle className="h-4 w-4 mr-1" />
                             Concluir
                           </Button>
-                        </div>
-                      )}
+                        )}
+                        {inspection.status === 'completed' && (
+                          <InspectionReportDialog
+                            inspection={inspection}
+                            onSaveReport={(report) => {
+                              const updatedInspections = inspections.map(i =>
+                                i.id === inspection.id
+                                  ? { ...i, report }
+                                  : i
+                              );
+                              setInspections(updatedInspections);
+                            }}
+                          />
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -557,9 +593,9 @@ export default function Inspections() {
                 <AlertTriangle className="h-4 w-4 text-red-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{filteredStats.failed}</div>
+                <div className="text-2xl font-bold">{filteredStats.inProgress}</div>
                 <p className="text-xs text-muted-foreground">
-                  {Math.round((filteredStats.failed / (filteredStats.total || 1)) * 100)}% do total
+                  {Math.round((filteredStats.inProgress / (filteredStats.total || 1)) * 100)}% do total
                 </p>
               </CardContent>
             </Card>
@@ -587,8 +623,8 @@ export default function Inspections() {
                       <span>{filteredInspections.filter(i => i.type === 'safety' && i.status === 'pending').length}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Falhas:</span>
-                      <span>{filteredInspections.filter(i => i.type === 'safety' && i.status === 'failed').length}</span>
+                      <span>Em Progresso:</span>
+                      <span>{filteredInspections.filter(i => i.type === 'safety' && i.status === 'in_progress').length}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -613,8 +649,8 @@ export default function Inspections() {
                       <span>{filteredInspections.filter(i => i.type === 'environmental' && i.status === 'pending').length}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Falhas:</span>
-                      <span>{filteredInspections.filter(i => i.type === 'environmental' && i.status === 'failed').length}</span>
+                      <span>Em Progresso:</span>
+                      <span>{filteredInspections.filter(i => i.type === 'environmental' && i.status === 'in_progress').length}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -639,8 +675,8 @@ export default function Inspections() {
                       <span>{filteredInspections.filter(i => i.type === 'quality' && i.status === 'pending').length}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Falhas:</span>
-                      <span>{filteredInspections.filter(i => i.type === 'quality' && i.status === 'failed').length}</span>
+                      <span>Em Progresso:</span>
+                      <span>{filteredInspections.filter(i => i.type === 'quality' && i.status === 'in_progress').length}</span>
                     </div>
                   </div>
                 </CardContent>

@@ -29,8 +29,8 @@ interface Training {
   description: string;
   regulation: string;
   duration: string;
-  targetRoles: string[];
   expirationInDays: number;
+  targetRoles: string[];
 }
 
 interface EmployeeTraining {
@@ -42,7 +42,6 @@ interface EmployeeTraining {
   trainingTitle: string;
   completionDate: Date;
   expirationDate: Date;
-  certificate: string;
   status: 'active' | 'expired' | 'expiring';
   scheduledRecyclingDate?: Date;
 }
@@ -64,8 +63,8 @@ const Trainings = () => {
       description: 'Treinamento para capacitação em trabalho em altura',
       regulation: 'NR-35',
       duration: '8 horas',
-      targetRoles: ['Operador de Manutenção', 'Eletricista', 'Montador'],
       expirationInDays: 730, // 2 anos
+      targetRoles: ['Eletricista', 'Técnico de Manutenção', 'Operador de Produção']
     },
     {
       id: '2',
@@ -73,8 +72,8 @@ const Trainings = () => {
       description: 'Treinamento para trabalho com instalações elétricas',
       regulation: 'NR-10',
       duration: '40 horas',
-      targetRoles: ['Eletricista', 'Técnico de Manutenção'],
       expirationInDays: 730, // 2 anos
+      targetRoles: ['Eletricista', 'Técnico de Manutenção']
     },
     {
       id: '3',
@@ -82,8 +81,8 @@ const Trainings = () => {
       description: 'Capacitação para trabalho em espaços confinados',
       regulation: 'NR-33',
       duration: '16 horas',
-      targetRoles: ['Operador de Produção', 'Técnico de Manutenção'],
       expirationInDays: 365, // 1 ano
+      targetRoles: ['Técnico de Manutenção', 'Operador de Produção']
     },
     {
       id: '4',
@@ -91,8 +90,8 @@ const Trainings = () => {
       description: 'Capacitação para membros da CIPA',
       regulation: 'NR-05',
       duration: '20 horas',
-      targetRoles: ['Membros da CIPA', 'Suplentes'],
       expirationInDays: 365, // 1 ano
+      targetRoles: ['Membro da CIPA']
     },
     {
       id: '5',
@@ -100,8 +99,8 @@ const Trainings = () => {
       description: 'Treinamento básico de primeiros socorros',
       regulation: 'NR-07',
       duration: '4 horas',
-      targetRoles: ['Brigadistas', 'Todos os colaboradores'],
       expirationInDays: 730, // 2 anos
+      targetRoles: ['Brigadista', 'Membro da CIPA']
     },
   ]);
 
@@ -118,7 +117,6 @@ const Trainings = () => {
       trainingTitle: 'NR-10: Segurança em Instalações Elétricas',
       completionDate: addDays(today, -600),
       expirationDate: addDays(today, 130),
-      certificate: 'CERT-2023-001',
       status: 'active',
     },
     {
@@ -130,7 +128,6 @@ const Trainings = () => {
       trainingTitle: 'NR-35: Trabalho em Altura',
       completionDate: addDays(today, -700),
       expirationDate: addDays(today, 30),
-      certificate: 'CERT-2023-002',
       status: 'expiring',
     },
     {
@@ -142,7 +139,6 @@ const Trainings = () => {
       trainingTitle: 'NR-33: Espaços Confinados',
       completionDate: addDays(today, -380),
       expirationDate: addDays(today, -15),
-      certificate: 'CERT-2023-003',
       status: 'expired',
     },
     {
@@ -154,7 +150,6 @@ const Trainings = () => {
       trainingTitle: 'NR-33: Espaços Confinados',
       completionDate: addDays(today, -100),
       expirationDate: addDays(today, 265),
-      certificate: 'CERT-2023-004',
       status: 'active',
     },
     {
@@ -166,7 +161,6 @@ const Trainings = () => {
       trainingTitle: 'Primeiro Socorros',
       completionDate: addDays(today, -720),
       expirationDate: addDays(today, 10),
-      certificate: 'CERT-2022-005',
       status: 'expiring',
     },
     {
@@ -178,7 +172,6 @@ const Trainings = () => {
       trainingTitle: 'CIPA - Comissão Interna de Prevenção de Acidentes',
       completionDate: addDays(today, -370),
       expirationDate: addDays(today, -5),
-      certificate: 'CERT-2023-006',
       status: 'expired',
     },
   ]);
@@ -457,7 +450,6 @@ const Trainings = () => {
                 <TableHead>Treinamento</TableHead>
                 <TableHead>Data de Conclusão</TableHead>
                 <TableHead>Vencimento</TableHead>
-                <TableHead>Certificado</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -469,7 +461,6 @@ const Trainings = () => {
                   <TableCell>{training.trainingTitle}</TableCell>
                   <TableCell>{formatDate(training.completionDate)}</TableCell>
                   <TableCell>{formatDate(training.expirationDate)}</TableCell>
-                  <TableCell>{training.certificate}</TableCell>
                   <TableCell>{getStatusBadge(training.status)}</TableCell>
                 </TableRow>
               ))}

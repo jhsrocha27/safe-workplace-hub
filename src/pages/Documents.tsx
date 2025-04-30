@@ -364,7 +364,7 @@ export default function Documents() {
                 <div className="col-span-3 border-2 border-dashed border-gray-300 rounded-md p-6 text-center">
                   <Upload className="mx-auto h-8 w-8 text-gray-400" />
                   <p className="mt-2 text-sm text-gray-600">Arraste e solte um arquivo ou clique para selecionar</p>
-                  <p className="mt-1 text-xs text-gray-500">PDF, JPEG ou PNG (Máx. 5MB)</p>
+                  <p className="mt-1 text-xs text-gray-500">PDF, JPEG ou PNG (Máx. 10MB)</p>
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -373,10 +373,10 @@ export default function Documents() {
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
-                        if (file.size > 5 * 1024 * 1024) {
+                        if (file.size > 10 * 1024 * 1024) {
                           toast({
                             title: "Erro",
-                            description: "O arquivo deve ter no máximo 5MB",
+                            description: "O arquivo deve ter no máximo 10MB",
                             variant: "destructive"
                           });
                           return;

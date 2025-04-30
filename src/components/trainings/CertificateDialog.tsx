@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { useCompanyInfo } from '@/hooks/use-company-info';
 
 interface CertificateDialogProps {
   trainingTitle: string;
@@ -22,6 +23,7 @@ interface Employee {
 export function CertificateDialog({ trainingTitle, regulation, duration }: CertificateDialogProps) {
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { companyInfo } = useCompanyInfo();
 
   const employees: Employee[] = [
     { id: 'E001', name: 'João Silva', role: 'Eletricista' },
@@ -82,7 +84,7 @@ export function CertificateDialog({ trainingTitle, regulation, duration }: Certi
                 <h1 className="text-4xl font-bold text-center text-teal-800 mb-8">CERTIFICADO</h1>
                 <div className="text-lg text-center space-y-6">
                   <p>
-                    A Empresa <span className="font-bold">TecSafe</span> certifica que
+                    A Empresa <span className="font-bold">{companyInfo.name}</span> certifica que
                     <span className="font-bold"> {selectedEmployee}</span>, participou do treinamento
                     de <span className="font-bold">{trainingTitle}</span>, realizado no período de
                     {format(new Date(), 'dd \'à\' dd \'de\' MMMM \'de\' yyyy', { locale: ptBR })}.

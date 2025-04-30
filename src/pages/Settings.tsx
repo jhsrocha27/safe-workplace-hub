@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useCompanyInfo } from '@/hooks/use-company-info';
 import {
   Card,
   CardContent,
@@ -39,14 +40,7 @@ interface Employee {
 }
 
 const Settings = () => {
-  const [companyInfo, setCompanyInfo] = useState({
-    name: "SafeWork Engenharia",
-    cnpj: "12.345.678/0001-90",
-    address: "Av. Paulista, 1000, São Paulo, SP",
-    phone: "(11) 98765-4321",
-    email: "contato@safework.com.br",
-    website: "www.safework.com.br"
-  });
+  const { companyInfo, setCompanyInfo } = useCompanyInfo();
 
   const [notifications, setNotifications] = useState({
     email: true,
