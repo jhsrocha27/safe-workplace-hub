@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { InspectionReportDialog } from '@/components/inspections/InspectionReportDialog';
+import { useErrorHandler } from '@/hooks/use-error-handler';
 
 interface Inspection {
   id: string;
@@ -25,27 +26,36 @@ export function InspectionDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [inspection, setInspection] = useState<Inspection | null>(null);
+  const { withErrorHandling, loading } = useErrorHandler({
+    defaultErrorMessage: "Erro ao carregar detalhes da inspeção"
+  });
 
-  // TODO: Buscar dados da inspeção do backend usando o ID
+  // Fetch inspection data
   React.useEffect(() => {
-    // Simular busca de dados
-    const mockInspection: Inspection = {
-      id: '1',
-      title: 'Inspeção de Segurança',
-      type: 'safety',
-      location: 'Área de Produção',
-      date: new Date(),
-      inspector: 'João Silva',
-      findings: ['Equipamento com manutenção vencida', 'Sinalização inadequada'],
-      status: 'completed',
-      hasReport: false
+    const fetchInspection = async () => {
+      await withErrorHandling(async () => {
+        // Mock data fetch - would be an API call in a real app
+        const mockInspection: Inspection = {
+          id: '1',
+          title: 'Inspeção de Segurança',
+          type: 'safety',
+          location: 'Área de Produção',
+          date: new Date(),
+          inspector: 'João Silva',
+          findings: ['Equipamento com manutenção vencida', 'Sinalização inadequada'],
+          status: 'completed',
+          hasReport: false
+        };
+        setInspection(mockInspection);
+      });
     };
-    setInspection(mockInspection);
-  }, [id]);
+    
+    fetchInspection();
+  }, [id, withErrorHandling]);
 
   const handleSaveReport = async (report: any) => {
     if (inspection) {
-      // TODO: Implementar salvamento do relatório no backend
+      // TODO: Implement report saving to the backend
       setInspection({
         ...inspection,
         hasReport: true,
@@ -54,8 +64,12 @@ export function InspectionDetails() {
     }
   };
 
+  if (loading) {
+    return <div className="flex justify-center items-center h-64">Carregando...</div>;
+  }
+
   if (!inspection) {
-    return <div>Carregando...</div>;
+    return <div className="flex justify-center items-center h-64">Inspeção não encontrada</div>;
   }
 
   const getStatusVariant = (status: string) => {
