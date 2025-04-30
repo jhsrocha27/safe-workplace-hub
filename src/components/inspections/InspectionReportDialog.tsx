@@ -76,6 +76,17 @@ export function InspectionReportDialog({ inspection, onSaveReport }: InspectionR
         }
       });
 
+      // Atualizar a inspeção com o relatório e URL do PDF
+      const updatedInspection = {
+        ...inspection,
+        hasReport: true,
+        reportPdfUrl: pdfUrl,
+        report: {
+          ...report,
+          pdfUrl
+        }
+      };
+
       // Salvar relatório com a URL do PDF
       onSaveReport({ ...report, pdfUrl });
       setProgress(100);
@@ -109,158 +120,138 @@ export function InspectionReportDialog({ inspection, onSaveReport }: InspectionR
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        {inspection.status === 'completed' && inspection.hasReport ? (
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={(e) => {
-              e.preventDefault();
-              if (inspection.reportPdfUrl) {
-                window.open(inspection.reportPdfUrl, '_blank');
-              }
-            }}
-          >
-            Visualizar PDF
-          </Button>
-        ) : inspection.status === 'completed' ? (
-          <Button variant="outline" size="sm" className="w-full">
-            Criar Relatório
-          </Button>
-        ) : null}
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full"
+          onClick={() => setIsOpen(true)}
+        >
+          Criar Relatório
+        </Button>
       </DialogTrigger>
       <DialogContent className="max-w-[800px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Relatório de Inspeção</DialogTitle>
-          <DialogDescription>
-            Registre as observações e conclusões da inspeção realizada.
-          </DialogDescription>
-        </DialogHeader>
+        {!inspection.hasReport && (
+          <>
+            <DialogHeader>
+              <DialogTitle>Relatório de Inspeção</DialogTitle>
+              <DialogDescription>
+                Registre as observações e conclusões da inspeção realizada.
+              </DialogDescription>
+            </DialogHeader>
 
-        <div className="grid gap-6 py-4">
-          {/* Informações da Inspeção */}
-          <div className="grid gap-2">
-            <h4 className="font-medium">Informações da Inspeção</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Título</Label>
-                <Input value={inspection.title} readOnly />
+            <div className="grid gap-6 py-4">
+              {/* Informações da Inspeção */}
+              <div className="grid gap-2">
+                <h4 className="font-medium">Informações da Inspeção</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Título</Label>
+                    <Input value={inspection.title} readOnly />
+                  </div>
+                  <div>
+                    <Label>Local</Label>
+                    <Input value={inspection.location} readOnly />
+                  </div>
+                  <div>
+                    <Label>Data</Label>
+                    <Input value={format(inspection.date, 'dd/MM/yyyy', { locale: ptBR })} readOnly />
+                  </div>
+                  <div>
+                    <Label>Inspetor</Label>
+                    <Input value={inspection.inspector} readOnly />
+                  </div>
+                </div>
               </div>
-              <div>
-                <Label>Local</Label>
-                <Input value={inspection.location} readOnly />
+
+              {/* Observações Gerais */}
+              <div className="grid gap-2">
+                <Label htmlFor="generalObservations" className="font-medium">
+                  Observações Gerais*
+                </Label>
+                <Textarea
+                  id="generalObservations"
+                  placeholder="Descreva as observações gerais da inspeção..."
+                  value={report.generalObservations}
+                  onChange={(e) => setReport({ ...report, generalObservations: e.target.value })}
+                  rows={4}
+                />
               </div>
-              <div>
-                <Label>Data</Label>
-                <Input value={format(inspection.date, 'dd/MM/yyyy', { locale: ptBR })} readOnly />
+
+              {/* Não Conformidades */}
+              <div className="grid gap-2">
+                <Label htmlFor="nonConformities" className="font-medium">
+                  Não Conformidades Encontradas
+                </Label>
+                <Textarea
+                  id="nonConformities"
+                  placeholder="Liste as não conformidades identificadas..."
+                  value={report.nonConformities}
+                  onChange={(e) => setReport({ ...report, nonConformities: e.target.value })}
+                  rows={3}
+                />
               </div>
-              <div>
-                <Label>Inspetor</Label>
-                <Input value={inspection.inspector} readOnly />
+
+              {/* Ações Corretivas */}
+              <div className="grid gap-2">
+                <Label htmlFor="correctiveActions" className="font-medium">
+                  Ações Corretivas Sugeridas
+                </Label>
+                <Textarea
+                  id="correctiveActions"
+                  placeholder="Descreva as ações corretivas necessárias..."
+                  value={report.correctiveActions}
+                  onChange={(e) => setReport({ ...report, correctiveActions: e.target.value })}
+                  rows={3}
+                />
               </div>
+
+              {/* Recomendações */}
+              <div className="grid gap-2">
+                <Label htmlFor="recommendations" className="font-medium">
+                  Recomendações e Melhorias
+                </Label>
+                <Textarea
+                  id="recommendations"
+                  placeholder="Sugira recomendações e melhorias..."
+                  value={report.recommendations}
+                  onChange={(e) => setReport({ ...report, recommendations: e.target.value })}
+                  rows={3}
+                />
+              </div>
+
+              {/* Upload de Imagens */}
+              <div className="grid gap-2">
+                <Label className="font-medium">Imagens da Inspeção</Label>
+                <ImageUpload
+                  value={report.images}
+                  onChange={(urls) => setReport({ ...report, images: urls })}
+                  onError={() => {
+                    toast({
+                      title: 'Erro',
+                      description: 'Ocorreu um erro ao fazer upload da imagem.',
+                      variant: 'destructive'
+                    });
+                  }}
+                />
+              </div>
+
+              {/* Barra de Progresso */}
+              {isGeneratingPDF && (
+                <div className="space-y-2">
+                  <Label className="text-sm text-gray-500">Gerando PDF...</Label>
+                  <Progress value={progress} className="w-full" />
+                </div>
+              )}
             </div>
-          </div>
 
-          {/* Observações Gerais */}
-          <div className="grid gap-2">
-            <Label htmlFor="generalObservations" className="font-medium">
-              Observações Gerais*
-            </Label>
-            <Textarea
-              id="generalObservations"
-              placeholder="Descreva as observações gerais da inspeção..."
-              value={report.generalObservations}
-              onChange={(e) => setReport({ ...report, generalObservations: e.target.value })}
-              rows={4}
-            />
-          </div>
-
-          {/* Não Conformidades */}
-          <div className="grid gap-2">
-            <Label htmlFor="nonConformities" className="font-medium">
-              Não Conformidades Encontradas
-            </Label>
-            <Textarea
-              id="nonConformities"
-              placeholder="Liste as não conformidades identificadas..."
-              value={report.nonConformities}
-              onChange={(e) => setReport({ ...report, nonConformities: e.target.value })}
-              rows={3}
-            />
-          </div>
-
-          {/* Ações Corretivas */}
-          <div className="grid gap-2">
-            <Label htmlFor="correctiveActions" className="font-medium">
-              Ações Corretivas Sugeridas
-            </Label>
-            <Textarea
-              id="correctiveActions"
-              placeholder="Descreva as ações corretivas necessárias..."
-              value={report.correctiveActions}
-              onChange={(e) => setReport({ ...report, correctiveActions: e.target.value })}
-              rows={3}
-            />
-          </div>
-
-          {/* Recomendações */}
-          <div className="grid gap-2">
-            <Label htmlFor="recommendations" className="font-medium">
-              Recomendações e Melhorias
-            </Label>
-            <Textarea
-              id="recommendations"
-              placeholder="Sugira recomendações e melhorias..."
-              value={report.recommendations}
-              onChange={(e) => setReport({ ...report, recommendations: e.target.value })}
-              rows={3}
-            />
-          </div>
-
-          {/* Upload de Imagens */}
-          <div className="grid gap-2">
-            <Label className="font-medium">Imagens da Inspeção</Label>
-            <ImageUpload
-              value={report.images}
-              onChange={(urls) => setReport({ ...report, images: urls })}
-              onError={() => {
-                toast({
-                  title: 'Erro',
-                  description: 'Ocorreu um erro ao fazer upload da imagem.',
-                  variant: 'destructive'
-                });
-              }}
-            />
-          </div>
-
-          {/* Barra de Progresso */}
-          {isGeneratingPDF && (
-            <div className="space-y-2">
-              <Label className="text-sm text-gray-500">Gerando PDF...</Label>
-              <Progress value={progress} className="w-full" />
-            </div>
-          )}
-        </div>
-
-        <DialogFooter className="flex justify-between items-center">
-          <div>
-            {inspection.reportPdfUrl && (
-              <Button
-                variant="outline"
-                className="mr-2"
-                onClick={() => window.open(inspection.reportPdfUrl, '_blank')}
-              >
-                Visualizar PDF
+            <DialogFooter className="flex justify-end items-center gap-2">
+              <Button variant="outline" onClick={() => setIsOpen(false)}>
+                Cancelar
               </Button>
-            )}
-          </div>
-          <div>
-            <Button variant="outline" onClick={() => setIsOpen(false)} className="mr-2">
-              Cancelar
-            </Button>
-            <Button onClick={handleSubmit}>Salvar Relatório</Button>
-          </div>
-        </DialogFooter>
+              <Button onClick={handleSubmit}>Salvar Relatório</Button>
+            </DialogFooter>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

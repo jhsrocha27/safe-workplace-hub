@@ -20,6 +20,7 @@ import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { useNavigate } from 'react-router-dom';
 
 interface Inspection {
   id: string;
@@ -135,6 +136,7 @@ const checklistItems = [
 
 export default function Inspections() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [inspections, setInspections] = useState<Inspection[]>(mockInspections);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedArea, setSelectedArea] = useState("Todos");
@@ -177,6 +179,27 @@ export default function Inspections() {
       case 'in_progress': return 'Em Progresso';
       default: return status;
     }
+  };
+
+  // Handler for saving inspection report
+  const handleSaveReport = (inspectionId: string, reportData: any) => {
+    const updatedInspections = inspections.map(inspection =>
+      inspection.id === inspectionId
+        ? {
+            ...inspection,
+            hasReport: true,
+            reportPdfUrl: reportData.pdfUrl,
+            report: {
+              generalObservations: reportData.generalObservations,
+              nonConformities: reportData.nonConformities,
+              correctiveActions: reportData.correctiveActions,
+              recommendations: reportData.recommendations
+            }
+          }
+        : inspection
+    );
+
+    setInspections(updatedInspections);
   };
 
   // Handler for creating a new inspection
@@ -242,14 +265,14 @@ export default function Inspections() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge className="bg-green-500">Concluída</Badge>;
+        return <Badge variant="success" className="bg-green-500">Concluída</Badge>;
       case 'pending':
-        return <Badge className="bg-yellow-500">Pendente</Badge>;
+        return <Badge variant="warning" className="bg-yellow-500">Pendente</Badge>;
       case 'in_progress':
-        return <Badge className="bg-blue-500">Em Progresso</Badge>;
+        return <Badge variant="info" className="bg-blue-500">Em Progresso</Badge>;
       default:
         return <Badge>Desconhecido</Badge>;
-    }
+    };
   };
 
   // Function to get type badge for inspection
@@ -267,13 +290,12 @@ export default function Inspections() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="container mx-auto py-6 space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Inspeções</h1>
-          <p className="text-muted-foreground">
-            Gerencie inspeções de segurança, ambientais e de qualidade.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">Inspeções</h1>
+          <p className="text-muted-foreground">Gerencie e acompanhe as inspeções de segurança.</p>
         </div>
         
         <Dialog open={isNewInspectionOpen} onOpenChange={setIsNewInspectionOpen}>
@@ -468,80 +490,50 @@ export default function Inspections() {
               </Alert>
             ) : (
               filteredInspections.map((inspection) => (
-                <Card key={inspection.id} className="overflow-hidden">
-                  <CardHeader className="pb-3">
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between">
+                <div 
+                    key={inspection.id}
+                    className={cn(
+                      "p-4 border rounded-lg bg-card",
+                      inspection.status === 'completed' && "cursor-pointer hover:bg-accent transition-colors"
+                    )}
+                    onClick={() => {
+                      if (inspection.status === 'completed') {
+                        navigate(`/inspecoes/${inspection.id}`);
+                      }
+                    }}
+                  >
+                    <div className="flex justify-between items-start mb-2">
                       <div>
-                        <CardTitle>{inspection.title}</CardTitle>
-                        <CardDescription className="mt-1">
-                          Local: {inspection.location}
-                        </CardDescription>
+                        <h3 className="font-semibold">{inspection.title}</h3>
+                        <p className="text-sm text-muted-foreground">{inspection.location}</p>
                       </div>
-                      <div className="flex gap-2 mt-2 sm:mt-0">
-                        {getTypeBadge(inspection.type)}
-                        {getStatusBadge(inspection.status)}
-                      </div>
+                      <Badge
+                        variant={inspection.status === 'completed' ? 'default' : 'secondary'}
+                      >
+                        {getStatusDisplay(inspection.status)}
+                      </Badge>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="text-sm">
-                        <span className="font-medium">Data:</span>{" "}
-                        {format(inspection.date, "dd/MM/yyyy")}
-                      </div>
-                      <div className="text-sm">
-                        <span className="font-medium">Inspetor:</span>{" "}
-                        {inspection.inspector}
-                      </div>
-                      {inspection.findings.length > 0 && (
-                        <>
-                          <div className="text-sm font-medium mt-2">Descobertas:</div>
-                          <ul className="list-disc list-inside text-sm space-y-1">
-                            {inspection.findings.map((finding, index) => (
-                              <li key={index}>{finding}</li>
-                            ))}
-                          </ul>
-                        </>
-                      )}
-                      <div className="flex justify-end gap-2 mt-3">
-                        {inspection.status === 'pending' && (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              const updatedInspections = inspections.map(i => 
-                                i.id === inspection.id 
-                                  ? { ...i, status: 'completed' as const, findings: ['Inspeção concluída sem ocorrências.'] } 
-                                  : i
-                              );
-                              setInspections(updatedInspections);
-                              toast({
-                                title: "Inspeção atualizada",
-                                description: "A inspeção foi marcada como concluída.",
-                              });
-                            }}
-                          >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Concluir
-                          </Button>
-                        )}
-                        {inspection.status === 'completed' && (
-                          <InspectionReportDialog
-                            inspection={inspection}
-                            onSaveReport={(report) => {
-                              const updatedInspections = inspections.map(i =>
-                                i.id === inspection.id
-                                  ? { ...i, report }
-                                  : i
-                              );
-                              setInspections(updatedInspections);
-                            }}
-                          />
-                        )}
-                      </div>
+                  <div className="space-y-2">
+                    <div className="text-sm">
+                      <span className="font-medium">Data:</span>{" "}
+                      {format(inspection.date, "dd/MM/yyyy")}
                     </div>
-                  </CardContent>
-                </Card>
+                    <div className="text-sm">
+                      <span className="font-medium">Inspetor:</span>{" "}
+                      {inspection.inspector}
+                    </div>
+                    {inspection.findings.length > 0 && (
+                      <>
+                        <div className="text-sm font-medium mt-2">Descobertas:</div>
+                        <ul className="list-disc list-inside text-sm space-y-1">
+                          {inspection.findings.map((finding, index) => (
+                            <li key={index}>{finding}</li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </div>
+                </div>
               ))
             )}
           </div>
