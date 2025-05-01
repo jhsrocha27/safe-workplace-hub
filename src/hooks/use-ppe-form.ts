@@ -243,7 +243,7 @@ export function usePPEForm() {
       } catch (error) {
         console.error('Erro ao processar data:', error);
         fieldErrors.issueDate = 'Data de entrega inválida';
-        fieldErrors.expiryDate = 'Não é possível calcular a data de validade';
+        fieldErrors.expiryDate = 'N��o é possível calcular a data de validade';
       }
     }
     
@@ -252,7 +252,7 @@ export function usePPEForm() {
     // Atualiza a data de validade se necessário
     if (Object.keys(additionalUpdates).length > 0) {
       Object.entries(additionalUpdates).forEach(([field, value]) => {
-        if (field === 'expiryDate') {
+        if (field === 'expiryDate' && typeof value === 'string') {
           dispatch({ type: 'SET_FIELD', field: 'expiryDate', value });
         }
       });
