@@ -21,6 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useNavigate } from 'react-router-dom';
+import { EditInspectionDialog } from '@/components/inspections/EditInspectionDialog';
 
 interface Inspection {
   id: string;
@@ -198,8 +199,35 @@ export default function Inspections() {
           }
         : inspection
     );
-
     setInspections(updatedInspections);
+    toast({
+      title: "Relatório salvo",
+      description: "O relatório da inspeção foi salvo com sucesso."
+    });
+  };
+
+  // Handler for updating inspection
+  const handleUpdateInspection = (id: string, updates: { date?: Date; status?: 'pending' | 'in_progress' | 'completed' }) => {
+    const updatedInspections = inspections.map(inspection =>
+      inspection.id === id
+        ? { ...inspection, ...updates }
+        : inspection
+    );
+    setInspections(updatedInspections);
+    toast({
+      title: "Inspeção atualizada",
+      description: "As alterações foram salvas com sucesso."
+    });
+  };
+
+  // Handler for deleting inspection
+  const handleDeleteInspection = (id: string) => {
+    const updatedInspections = inspections.filter(inspection => inspection.id !== id);
+    setInspections(updatedInspections);
+    toast({
+      title: "Inspeção removida",
+      description: "A inspeção foi removida com sucesso."
+    });
   };
 
   // Handler for creating a new inspection
@@ -261,18 +289,18 @@ export default function Inspections() {
     }
   };
 
-  // Function to get status badge for inspection
+  // Função para obter o badge de status da inspeção
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge variant="success" className="bg-green-500">Concluída</Badge>;
+        return <Badge className="bg-green-600 hover:bg-green-700 text-white">Concluída</Badge>;
       case 'pending':
-        return <Badge variant="warning" className="bg-yellow-500">Pendente</Badge>;
+        return <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white">Pendente</Badge>;
       case 'in_progress':
-        return <Badge variant="info" className="bg-blue-500">Em Progresso</Badge>;
+        return <Badge className="bg-blue-500 hover:bg-blue-600 text-white">Em Progresso</Badge>;
       default:
         return <Badge>Desconhecido</Badge>;
-    };
+    }
   };
 
   // Function to get type badge for inspection
@@ -491,244 +519,117 @@ export default function Inspections() {
             ) : (
               filteredInspections.map((inspection) => (
                 <div 
-                    key={inspection.id}
-                    className={cn(
-                      "p-4 border rounded-lg bg-card",
-                      inspection.status === 'completed' && "cursor-pointer hover:bg-accent transition-colors"
-                    )}
-                    onClick={() => {
-                      if (inspection.status === 'completed') {
-                        navigate(`/inspecoes/${inspection.id}`);
-                      }
-                    }}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="font-semibold">{inspection.title}</h3>
-                        <p className="text-sm text-muted-foreground">{inspection.location}</p>
-                      </div>
-                      <Badge
-                        variant={inspection.status === 'completed' ? 'default' : 'secondary'}
-                      >
-                        {getStatusDisplay(inspection.status)}
-                      </Badge>
+                  key={inspection.id}
+                  className={cn(
+                    "p-4 border rounded-lg bg-card",
+                    inspection.status === 'completed' && "cursor-pointer hover:bg-accent transition-colors"
+                  )}
+                  onClick={() => {
+                    if (inspection.status === 'completed') {
+                      navigate(`/inspecoes/${inspection.id}`);
+                    }
+                  }}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h3 className="font-semibold">{inspection.title}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {format(inspection.date, "PPP", { locale: ptBR })}
+                      </p>
                     </div>
-                  <div className="space-y-2">
-                    <div className="text-sm">
-                      <span className="font-medium">Data:</span>{" "}
-                      {format(inspection.date, "dd/MM/yyyy")}
+                    <div className="flex gap-2">
+                      {getTypeBadge(inspection.type)}
+                      {getStatusBadge(inspection.status)}
                     </div>
-                    <div className="text-sm">
-                      <span className="font-medium">Inspetor:</span>{" "}
-                      {inspection.inspector}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Local:</span>
+                      <span className="ml-1">{inspection.location}</span>
                     </div>
-                    {inspection.findings.length > 0 && (
-                      <>
-                        <div className="text-sm font-medium mt-2">Descobertas:</div>
-                        <ul className="list-disc list-inside text-sm space-y-1">
-                          {inspection.findings.map((finding, index) => (
-                            <li key={index}>{finding}</li>
-                          ))}
-                        </ul>
-                      </>
-                    )}
+                    <div>
+                      <span className="text-muted-foreground">Inspetor:</span>
+                      <span className="ml-1">{inspection.inspector}</span>
+                    </div>
+                  </div>
+                  {inspection.findings.length > 0 && (
+                    <div className="mt-2">
+                      <span className="text-sm text-muted-foreground">Constatações:</span>
+                      <ul className="list-disc list-inside text-sm mt-1">
+                        {inspection.findings.map((finding, index) => (
+                          <li key={index}>{finding}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  <div className="flex justify-end items-center mt-4">
+                    <EditInspectionDialog
+                      inspection={inspection}
+                      onUpdate={handleUpdateInspection}
+                      onDelete={handleDeleteInspection}
+                    />
                   </div>
                 </div>
               ))
             )}
           </div>
         </TabsContent>
-        
+
         <TabsContent value="statistics">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Total de Inspeções
-                </CardTitle>
-                <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{filteredStats.total}</div>
-                <p className="text-xs text-muted-foreground">
-                  {filteredStats.total === 1 ? 'Inspeção' : 'Inspeções'} registrada(s)
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Concluídas</CardTitle>
-                <CheckCircle className="h-4 w-4 text-green-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{filteredStats.completed}</div>
-                <p className="text-xs text-muted-foreground">
-                  {Math.round((filteredStats.completed / (filteredStats.total || 1)) * 100)}% do total
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
-                <ClipboardCheck className="h-4 w-4 text-yellow-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{filteredStats.pending}</div>
-                <p className="text-xs text-muted-foreground">
-                  {Math.round((filteredStats.pending / (filteredStats.total || 1)) * 100)}% do total
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Falhas</CardTitle>
-                <AlertTriangle className="h-4 w-4 text-red-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{filteredStats.inProgress}</div>
-                <p className="text-xs text-muted-foreground">
-                  {Math.round((filteredStats.inProgress / (filteredStats.total || 1)) * 100)}% do total
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-          
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold mb-4">Inspeções Por Tipo</h3>
-            <div className="grid gap-4 md:grid-cols-3">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Inspeções de Segurança</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {filteredInspections.filter(i => i.type === 'safety').length}
-                  </div>
-                  <Separator className="my-2" />
-                  <div className="text-xs space-y-1">
-                    <div className="flex justify-between">
-                      <span>Concluídas:</span>
-                      <span>{filteredInspections.filter(i => i.type === 'safety' && i.status === 'completed').length}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Pendentes:</span>
-                      <span>{filteredInspections.filter(i => i.type === 'safety' && i.status === 'pending').length}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Em Progresso:</span>
-                      <span>{filteredInspections.filter(i => i.type === 'safety' && i.status === 'in_progress').length}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Inspeções Ambientais</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {filteredInspections.filter(i => i.type === 'environmental').length}
-                  </div>
-                  <Separator className="my-2" />
-                  <div className="text-xs space-y-1">
-                    <div className="flex justify-between">
-                      <span>Concluídas:</span>
-                      <span>{filteredInspections.filter(i => i.type === 'environmental' && i.status === 'completed').length}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Pendentes:</span>
-                      <span>{filteredInspections.filter(i => i.type === 'environmental' && i.status === 'pending').length}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Em Progresso:</span>
-                      <span>{filteredInspections.filter(i => i.type === 'environmental' && i.status === 'in_progress').length}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Inspeções de Qualidade</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {filteredInspections.filter(i => i.type === 'quality').length}
-                  </div>
-                  <Separator className="my-2" />
-                  <div className="text-xs space-y-1">
-                    <div className="flex justify-between">
-                      <span>Concluídas:</span>
-                      <span>{filteredInspections.filter(i => i.type === 'quality' && i.status === 'completed').length}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Pendentes:</span>
-                      <span>{filteredInspections.filter(i => i.type === 'quality' && i.status === 'pending').length}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Em Progresso:</span>
-                      <span>{filteredInspections.filter(i => i.type === 'quality' && i.status === 'in_progress').length}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Estatísticas de Inspeções</CardTitle>
+              <CardDescription>Visão geral das inspeções no sistema</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {stats.map((stat, index) => (
+                  <Card key={index}>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                      <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{stat.value}</div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
-        
+
         <TabsContent value="upcoming">
-          <div className="space-y-4">
-            <Alert>
-              <ClipboardCheck className="h-4 w-4" />
-              <AlertTitle>Inspeções Programadas</AlertTitle>
-              <AlertDescription>
-                Inspeções pendentes ordenadas por data.
-              </AlertDescription>
-            </Alert>
-            
-            {filteredInspections
-              .filter(i => i.status === 'pending')
-              .sort((a, b) => a.date.getTime() - b.date.getTime())
-              .length === 0 ? (
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-center py-6">
-                      <p className="text-muted-foreground">Não há inspeções programadas para este período.</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                filteredInspections
-                  .filter(i => i.status === 'pending')
+          <Card>
+            <CardHeader>
+              <CardTitle>Inspeções Programadas</CardTitle>
+              <CardDescription>Próximas inspeções agendadas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {filteredInspections
+                  .filter(inspection => inspection.status === 'pending')
                   .sort((a, b) => a.date.getTime() - b.date.getTime())
                   .map(inspection => (
-                    <Card key={inspection.id}>
-                      <CardContent className="pt-6">
-                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                          <div>
-                            <h3 className="font-semibold">{inspection.title}</h3>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {inspection.location}
-                            </p>
-                            <div className="flex items-center gap-2 mt-2">
-                              <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm">
-                                {format(inspection.date, "dd 'de' MMMM", { locale: ptBR })}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex flex-col items-start md:items-end gap-2">
-                            {getTypeBadge(inspection.type)}
-                            <span className="text-sm">{inspection.inspector}</span>
-                          </div>
+                    <div key={inspection.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <h3 className="font-semibold">{inspection.title}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {format(inspection.date, "PPP", { locale: ptBR })}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-sm text-muted-foreground">
+                          {inspection.inspector}
                         </div>
-                      </CardContent>
-                    </Card>
-                ))
-              )
-            }
-          </div>
+                        {getStatusBadge(inspection.status)}
+                      </div>
+                    </div>
+                  ))
+                }
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
