@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -34,6 +33,7 @@ const Dashboard = () => {
   const [expiringDocuments, setExpiringDocuments] = useState(0);
   const [pendingPPEs, setPendingPPEs] = useState(0);
   const [expiringPPEs, setExpiringPPEs] = useState(0);
+  const [expiredPPEs, setExpiredPPEs] = useState(0);
   const [expiredTrainings, setExpiredTrainings] = useState(0);
   const [expiringTrainings, setExpiringTrainings] = useState(0);
   
@@ -57,13 +57,13 @@ const Dashboard = () => {
       try {
         const deliveries = await ppeDeliveryService.getAll();
         
-        // De acordo com a informação fornecida pelo usuário:
-        // 1 EPI vencido e 2 EPIs a vencer
-        const expiredPPEs = 1; // EPIs vencidos
-        const expiringPPEs = 2; // EPIs a vencer
+        // Filtrar EPIs por status
+        const expired = deliveries.filter(delivery => delivery.status === 'expired').length;
+        const expiring = deliveries.filter(delivery => delivery.status === 'expiring').length;
         
-        setExpiringPPEs(expiringPPEs);
-        setPendingPPEs(expiredPPEs + expiringPPEs); // Total de EPIs pendentes (vencidos + a vencer)
+        setExpiredPPEs(expired);
+        setExpiringPPEs(expiring);
+        setPendingPPEs(expired + expiring); // Total de EPIs pendentes (vencidos + a vencer)
       } catch (error) {
         console.error('Erro ao carregar EPIs:', error);
       }
@@ -126,7 +126,7 @@ const Dashboard = () => {
               <div className="text-2xl font-bold text-safety-orange">{pendingPPEs}</div>
               <ShieldAlert className="h-8 w-8 text-safety-orange/80" />
             </div>
-            <span className="text-xs text-gray-500">{expiringPPEs} substituições em breve</span>
+            <span className="text-xs text-gray-500">{expiredPPEs} vencidos, {expiringPPEs} a vencer</span>
           </CardContent>
         </LinkCard>
         
