@@ -108,10 +108,10 @@ const mockInspections: Inspection[] = [
 
 // Statistics data
 const stats = [
-  { title: "Total de Inspeções", value: "156" },
-  { title: "Concluídas", value: "112" },
-  { title: "Pendentes", value: "28" },
-  { title: "Em Progresso", value: "16" },
+  { title: "Total de Inspeções", value: "156", status: "Todos" },
+  { title: "Concluídas", value: "112", status: "completed" },
+  { title: "Pendentes", value: "28", status: "pending" },
+  { title: "Em Progresso", value: "16", status: "in_progress" },
 ];
 
 // Inspection areas for filter
@@ -164,6 +164,14 @@ export default function Inspections() {
     return matchesSearch && matchesArea && matchesStatus;
   });
 
+  // Get dynamic stats based on filtered data
+  const getDynamicStats = () => [
+    { title: "Total de Inspeções", value: inspections.length.toString(), status: "Todos" },
+    { title: "Concluídas", value: inspections.filter(i => i.status === 'completed').length.toString(), status: "completed" },
+    { title: "Pendentes", value: inspections.filter(i => i.status === 'pending').length.toString(), status: "pending" },
+    { title: "Em Progresso", value: inspections.filter(i => i.status === 'in_progress').length.toString(), status: "in_progress" },
+  ];
+
   // Stats calculation for the filtered inspections
   const filteredStats = {
     total: filteredInspections.length,
@@ -180,6 +188,11 @@ export default function Inspections() {
       case 'in_progress': return 'Em Progresso';
       default: return status;
     }
+  };
+
+  // Handler for clicking on stats cards
+  const handleStatClick = (status: string) => {
+    setSelectedStatus(status);
   };
 
   // Handler for saving inspection report
@@ -577,28 +590,73 @@ export default function Inspections() {
           </div>
         </TabsContent>
 
-        <TabsContent value="statistics">
-          <Card>
-            <CardHeader>
-              <CardTitle>Estatísticas de Inspeções</CardTitle>
-              <CardDescription>Visão geral das inspeções no sistema</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {stats.map((stat, index) => (
-                  <Card key={index}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                      <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
+        <TabsContent value="statistics" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {getDynamicStats().map((stat) => (
+              <Card 
+                key={stat.status} 
+                className={cn(
+                  "cursor-pointer hover:bg-accent/50",
+                  selectedStatus === stat.status && "border-2 border-primary"
+                )}
+                onClick={() => handleStatClick(stat.status)}
+              >
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                  {stat.status === "completed" && <CheckCircle className="h-4 w-4 text-muted-foreground" />}
+                  {stat.status === "pending" && <AlertTriangle className="h-4 w-4 text-muted-foreground" />}
+                  {stat.status === "in_progress" && <ClipboardCheck className="h-4 w-4 text-muted-foreground" />}
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stat.value}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold mb-4">Inspeções {selectedStatus !== "Todos" ? getStatusDisplay(selectedStatus) : ""}</h3>
+            {filteredInspections.length === 0 ? (
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Nenhuma inspeção encontrada</AlertTitle>
+                <AlertDescription>
+                  Não foram encontradas inspeções com os filtros selecionados.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="grid gap-4">
+                {filteredInspections.map((inspection) => (
+                  <Card key={inspection.id} className="hover:bg-accent/50">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">{inspection.title}</CardTitle>
+                        <div className="flex items-center gap-2">
+                          {getTypeBadge(inspection.type)}
+                          {getStatusBadge(inspection.status)}
+                        </div>
+                      </div>
+                      <CardDescription>
+                        {format(inspection.date, "PPP", { locale: ptBR })}
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">{stat.value}</div>
+                      <div className="grid gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Local:</span>
+                          <span>{inspection.location}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Inspetor:</span>
+                          <span>{inspection.inspector}</span>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="upcoming">
@@ -637,3 +695,31 @@ export default function Inspections() {
     </div>
   );
 }
+
+{/* Statistics Cards */}
+<div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+  {stats.map((stat) => (
+    <Card
+      key={stat.status}
+      className={cn(
+        "cursor-pointer transition-colors hover:bg-accent",
+        stat.status === "Todos" && "bg-accent"
+      )}
+      onClick={() => handleStatClick(stat.status)}
+    >
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+        {stat.status === "completed" && <CheckCircle className="h-4 w-4 text-green-500" />}
+        {stat.status === "pending" && <AlertTriangle className="h-4 w-4 text-yellow-500" />}
+        {stat.status === "in_progress" && <ClipboardCheck className="h-4 w-4 text-blue-500" />}
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{stat.value}</div>
+      </CardContent>
+    </Card>
+  ))}
+</div>
+function handleStatClick(status: string): void {
+  throw new Error('Function not implemented.');
+}
+
