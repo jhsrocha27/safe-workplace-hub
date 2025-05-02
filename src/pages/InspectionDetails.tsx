@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
@@ -25,33 +25,38 @@ interface Inspection {
 export function InspectionDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [inspection, setInspection] = useState<Inspection | null>(null);
+  const location = useLocation();
+  const [inspection, setInspection] = useState<Inspection | null>(
+    location.state?.inspection || null
+  );
   const { withErrorHandling, loading } = useErrorHandler({
     defaultErrorMessage: "Erro ao carregar detalhes da inspeção"
   });
 
-  // Fetch inspection data
+  // Fetch inspection data only if not available in location state
   React.useEffect(() => {
-    const fetchInspection = async () => {
-      await withErrorHandling(async () => {
-        // Mock data fetch - would be an API call in a real app
-        const mockInspection: Inspection = {
-          id: '1',
-          title: 'Inspeção de Segurança',
-          type: 'safety',
-          location: 'Área de Produção',
-          date: new Date(),
-          inspector: 'João Silva',
-          findings: ['Equipamento com manutenção vencida', 'Sinalização inadequada'],
-          status: 'completed',
-          hasReport: false
-        };
-        setInspection(mockInspection);
-      });
-    };
-    
-    fetchInspection();
-  }, [id, withErrorHandling]);
+    if (!inspection) {
+      const fetchInspection = async () => {
+        await withErrorHandling(async () => {
+          // Mock data fetch - would be an API call in a real app
+          const mockInspection: Inspection = {
+            id: '1',
+            title: 'Inspeção de Segurança',
+            type: 'safety',
+            location: 'Área de Produção',
+            date: new Date(),
+            inspector: 'João Silva',
+            findings: ['Equipamento com manutenção vencida', 'Sinalização inadequada'],
+            status: 'completed',
+            hasReport: false
+          };
+          setInspection(mockInspection);
+        });
+      };
+      
+      fetchInspection();
+    }
+  }, [id, inspection, withErrorHandling]);
 
   const handleSaveReport = async (report: any) => {
     if (inspection) {

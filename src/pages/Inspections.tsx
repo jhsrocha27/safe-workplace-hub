@@ -526,7 +526,7 @@ export default function Inspections() {
                   )}
                   onClick={() => {
                     if (inspection.status === 'completed') {
-                      navigate(`/inspecoes/${inspection.id}`);
+                      navigate(`/inspecoes/${inspection.id}`, { state: { inspection } });
                     }
                   }}
                 >
@@ -563,11 +563,13 @@ export default function Inspections() {
                     </div>
                   )}
                   <div className="flex justify-end items-center mt-4">
-                    <EditInspectionDialog
-                      inspection={inspection}
-                      onUpdate={handleUpdateInspection}
-                      onDelete={handleDeleteInspection}
-                    />
+                    {inspection.status !== 'completed' && (
+                      <EditInspectionDialog
+                        inspection={inspection}
+                        onUpdate={handleUpdateInspection}
+                        onDelete={handleDeleteInspection}
+                      />
+                    )}
                   </div>
                 </div>
               ))
