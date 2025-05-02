@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -27,7 +28,7 @@ export function EditInspectionDialog({ inspection, onUpdate, onDelete }: EditIns
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<Date>(inspection.date);
-  const [status, setStatus] = useState(inspection.status);
+  const [status, setStatus] = useState<'pending' | 'in_progress' | 'completed'>(inspection.status);
 
   const handleUpdate = () => {
     onUpdate(inspection.id, { date, status });
@@ -46,6 +47,14 @@ export function EditInspectionDialog({ inspection, onUpdate, onDelete }: EditIns
         title: 'Inspeção removida',
         description: 'A inspeção foi removida com sucesso.',
       });
+    }
+  };
+
+  // Handler for status change that ensures type safety
+  const handleStatusChange = (value: string) => {
+    // Ensure the value is one of the allowed status types
+    if (value === 'pending' || value === 'in_progress' || value === 'completed') {
+      setStatus(value);
     }
   };
 
@@ -101,7 +110,7 @@ export function EditInspectionDialog({ inspection, onUpdate, onDelete }: EditIns
           {/* Status */}
           <div className="grid gap-2">
             <Label>Status</Label>
-            <Select value={status} onValueChange={setStatus}>
+            <Select value={status} onValueChange={handleStatusChange}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
