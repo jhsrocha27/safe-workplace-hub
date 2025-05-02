@@ -112,6 +112,24 @@ const Accidents: React.FC = () => {
   const [isNewRecordDialogOpen, setIsNewRecordDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedAccident, setSelectedAccident] = useState<Accident | null>(null);
+  const [locations] = useState([
+    { id: 1, name: 'Setor de Produção' },
+    { id: 2, name: 'Setor de Embalagem' },
+    { id: 3, name: 'Estacionamento' },
+    { id: 4, name: 'Almoxarifado' },
+    { id: 5, name: 'Área de Manutenção' },
+    { id: 6, name: 'Escritório Administrativo' },
+    { id: 7, name: 'Refeitório' },
+    { id: 8, name: 'Laboratório de Qualidade' }
+  ]);
+
+  const [employees, setEmployees] = useState([
+    { id: 1, name: 'Carlos Santos', position: 'Eletricista', department: 'Manutenção' },
+    { id: 2, name: 'Maria Oliveira', position: 'Operadora', department: 'Produção' },
+    { id: 3, name: 'João Silva', position: 'Técnico', department: 'Qualidade' },
+    { id: 4, name: 'Ana Ferreira', position: 'Analista', department: 'Administrativo' },
+    { id: 5, name: 'Pedro Costa', position: 'Supervisor', department: 'Operações' }
+  ]);
   const [editData, setEditData] = useState<EditAccidentData>({
     timelineEvent: {
       date: new Date(),
@@ -380,22 +398,42 @@ const Accidents: React.FC = () => {
 
               <div className="grid grid-cols-1 gap-3">
                 <Label>Local</Label>
-                <Input
-                  placeholder="Local da ocorrência"
+                <Select
                   value={newRecord.location}
-                  onChange={(e) => setNewRecord({ ...newRecord, location: e.target.value })}
-                />
+                  onValueChange={(value) => setNewRecord({ ...newRecord, location: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o local da ocorrência" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locations.map((location) => (
+                      <SelectItem key={location.id} value={location.name}>
+                        {location.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {newRecord.type === 'accident' ? (
                 <>
                   <div className="grid grid-cols-1 gap-3">
                     <Label>Funcionário Envolvido</Label>
-                    <Input
-                      placeholder="Nome do funcionário"
+                    <Select
                       value={newRecord.victim}
-                      onChange={(e) => setNewRecord({ ...newRecord, victim: e.target.value })}
-                    />
+                      onValueChange={(value) => setNewRecord({ ...newRecord, victim: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o funcionário" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {employees.map((employee) => (
+                          <SelectItem key={employee.id} value={employee.name}>
+                            {employee.name} - {employee.position} ({employee.department})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="grid grid-cols-1 gap-3">
                     <Label>Gravidade</Label>
