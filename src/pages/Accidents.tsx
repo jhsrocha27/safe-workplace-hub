@@ -43,6 +43,18 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 
+interface TimelineEvent {
+  date: string;
+  time: string;
+  description: string;
+}
+
+interface CAT {
+  number: string;
+  openingDate: string;
+  status: 'Aberto' | 'Enviado' | 'Processado';
+}
+
 interface Accident {
   id: number;
   date: string;
@@ -54,16 +66,8 @@ interface Accident {
   description: string;
   status: 'Em análise' | 'Concluído';
   isExpanded?: boolean;
-  timeline?: {
-    date: string;
-    time: string;
-    description: string;
-  }[];
-  cat?: {
-    number: string;
-    openingDate: string;
-    status: 'Aberto' | 'Enviado' | 'Processado';
-  };
+  timeline?: TimelineEvent[];
+  cat?: CAT;
 }
 
 interface EditAccidentData {
@@ -87,6 +91,7 @@ interface NearMiss {
   type: string;
   description: string;
   status: 'Em análise' | 'Resolvido';
+  isExpanded?: boolean;
 }
 
 interface NewRecord {
@@ -102,7 +107,7 @@ interface NewRecord {
   status: 'Em análise' | 'Concluído' | 'Resolvido';
 }
 
-const Accidents = () => {
+const Accidents: React.FC = () => {
   const [activeTab, setActiveTab] = useState('registered');
   const [isNewRecordDialogOpen, setIsNewRecordDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -118,14 +123,6 @@ const Accidents = () => {
       status: 'Aberto'
     }
   });
-  const toggleAccidentDetails = (accidentId: number) => {
-    setRegisteredAccidents(accidents => accidents.map(accident => {
-      if (accident.id === accidentId) {
-        return { ...accident, isExpanded: !accident.isExpanded };
-      }
-      return accident;
-    }));
-  };
 
   const [registeredAccidents, setRegisteredAccidents] = useState<Accident[]>([
     {
@@ -205,7 +202,8 @@ const Accidents = () => {
       reportedBy: 'Ana Ferreira',
       type: 'Obstáculo',
       description: 'Material deixado no corredor principal, causando risco de tropeço.',
-      status: 'Resolvido'
+      status: 'Resolvido',
+      isExpanded: false
     },
     {
       id: 2,
@@ -215,9 +213,13 @@ const Accidents = () => {
       reportedBy: 'Pedro Costa',
       type: 'Vazamento',
       description: 'Pequeno vazamento de óleo próximo à máquina de corte.',
-      status: 'Em análise'
+      status: 'Em análise',
+      isExpanded: false
     }
   ]);
+
+  const [selectedNearMiss, setSelectedNearMiss] = useState<NearMiss | null>(null);
+  const [isEditNearMissDialogOpen, setIsEditNearMissDialogOpen] = useState(false);
 
   const [newRecord, setNewRecord] = useState<NewRecord>({
     type: 'accident',
@@ -231,6 +233,24 @@ const Accidents = () => {
     reportedBy: '',
     status: 'Em análise'
   });
+
+  const toggleAccidentDetails = (accidentId: number) => {
+    setRegisteredAccidents(accidents => accidents.map(accident => {
+      if (accident.id === accidentId) {
+        return { ...accident, isExpanded: !accident.isExpanded };
+      }
+      return accident;
+    }));
+  };
+
+  const toggleNearMissDetails = (nearMissId: number) => {
+    setNearMisses(nearMisses => nearMisses.map(nearMiss => {
+      if (nearMiss.id === nearMissId) {
+        return { ...nearMiss, isExpanded: !nearMiss.isExpanded };
+      }
+      return nearMiss;
+    }));
+  };
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
@@ -433,6 +453,168 @@ const Accidents = () => {
         </Dialog>
       </div>
 
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle>Editar Registro de Acidente</DialogTitle>
+            <DialogDescription>
+              Adicione eventos à linha do tempo e atualize informações do CAT.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-1 gap-3">
+              <Label>Novo Evento na Linha do Tempo</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Data</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !editData.timelineEvent.date && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {editData.timelineEvent.date ? (
+                          format(editData.timelineEvent.date, "dd/MM/yyyy", { locale: ptBR })
+                        ) : (
+                          <span>Selecione uma data</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={editData.timelineEvent.date}
+                        onSelect={(date) => date && setEditData({
+                          ...editData,
+                          timelineEvent: { ...editData.timelineEvent, date }
+                        })}
+                        initialFocus
+                        locale={ptBR}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div>
+                  <Label>Hora</Label>
+                  <Input
+                    type="time"
+                    value={editData.timelineEvent.time}
+                    onChange={(e) => setEditData({
+                      ...editData,
+                      timelineEvent: { ...editData.timelineEvent, time: e.target.value }
+                    })}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Descrição do Evento</Label>
+                <Input
+                  placeholder="Descreva o evento"
+                  value={editData.timelineEvent.description}
+                  onChange={(e) => setEditData({
+                    ...editData,
+                    timelineEvent: { ...editData.timelineEvent, description: e.target.value }
+                  })}
+                />
+              </div>
+              <Button
+                onClick={() => {
+                  if (selectedAccident && editData.timelineEvent.date && editData.timelineEvent.time && editData.timelineEvent.description) {
+                    const newEvent = {
+                      date: format(editData.timelineEvent.date, 'dd/MM/yyyy'),
+                      time: editData.timelineEvent.time,
+                      description: editData.timelineEvent.description
+                    };
+                    setRegisteredAccidents(accidents => accidents.map(acc => {
+                      if (acc.id === selectedAccident.id) {
+                        return {
+                          ...acc,
+                          timeline: [...(acc.timeline || []), newEvent]
+                        };
+                      }
+                      return acc;
+                    }));
+                    setEditData({
+                      ...editData,
+                      timelineEvent: {
+                        date: new Date(),
+                        time: '',
+                        description: ''
+                      }
+                    });
+                  }
+                }}
+              >
+                Adicionar Evento
+              </Button>
+            </div>
+
+            <Separator className="my-4" />
+
+            <div className="grid grid-cols-1 gap-3">
+              <Label>Informações do CAT</Label>
+              <div>
+                <Label>Número do CAT</Label>
+                <Input
+                  placeholder="Número do CAT"
+                  value={editData.cat.number}
+                  onChange={(e) => setEditData({
+                    ...editData,
+                    cat: { ...editData.cat, number: e.target.value }
+                  })}
+                />
+              </div>
+              <div>
+                <Label>Status do CAT</Label>
+                <Select
+                  value={editData.cat.status}
+                  onValueChange={(value: 'Aberto' | 'Enviado' | 'Processado') => setEditData({
+                    ...editData,
+                    cat: { ...editData.cat, status: value }
+                  })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Aberto">Aberto</SelectItem>
+                    <SelectItem value="Enviado">Enviado</SelectItem>
+                    <SelectItem value="Processado">Processado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                onClick={() => {
+                  if (selectedAccident && editData.cat.number) {
+                    setRegisteredAccidents(accidents => accidents.map(acc => {
+                      if (acc.id === selectedAccident.id) {
+                        return {
+                          ...acc,
+                          cat: {
+                            ...editData.cat,
+                            openingDate: acc.cat?.openingDate || format(new Date(), 'dd/MM/yyyy')
+                          }
+                        };
+                      }
+                      return acc;
+                    }));
+                  }
+                }}
+              >
+                Atualizar CAT
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setIsEditDialogOpen(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Tabs defaultValue="registered" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger 
@@ -550,50 +732,35 @@ const Accidents = () => {
                           </td>
                         </tr>
                         {accident.isExpanded && (
-                          <tr>
-                            <td colSpan={7} className="bg-gray-50 px-6 py-4">
+                          <tr className="bg-gray-50">
+                            <td colSpan={7} className="px-6 py-4">
                               <div className="space-y-4">
                                 <div>
-                                  <h4 className="text-sm font-semibold mb-2">Descrição do Acidente</h4>
-                                  <p className="text-sm text-gray-600">{accident.description}</p>
+                                  <h4 className="font-semibold mb-2">Descrição do Acidente</h4>
+                                  <p>{accident.description}</p>
                                 </div>
-                                
                                 {accident.timeline && (
                                   <div>
-                                    <h4 className="text-sm font-semibold mb-2">Linha do Tempo</h4>
+                                    <h4 className="font-semibold mb-2">Linha do Tempo</h4>
                                     <div className="space-y-2">
                                       {accident.timeline.map((event, index) => (
-                                        <div key={index} className="flex gap-4 text-sm">
-                                          <div className="text-gray-500">{event.date} {event.time}</div>
+                                        <div key={index} className="flex items-start gap-2">
+                                          <div className="min-w-[120px] text-sm text-gray-500">
+                                            {event.date} {event.time}
+                                          </div>
                                           <div>{event.description}</div>
                                         </div>
                                       ))}
                                     </div>
                                   </div>
                                 )}
-                                
                                 {accident.cat && (
                                   <div>
-                                    <h4 className="text-sm font-semibold mb-2">Informações CAT</h4>
-                                    <div className="grid grid-cols-3 gap-4 text-sm">
-                                      <div>
-                                        <span className="text-gray-500">Número: </span>
-                                        {accident.cat.number}
-                                      </div>
-                                      <div>
-                                        <span className="text-gray-500">Data de Abertura: </span>
-                                        {accident.cat.openingDate}
-                                      </div>
-                                      <div>
-                                        <span className="text-gray-500">Status: </span>
-                                        <Badge variant="outline" className={
-                                          accident.cat.status === 'Aberto' ? 'text-safety-blue' :
-                                          accident.cat.status === 'Enviado' ? 'text-safety-orange' :
-                                          'text-safety-green'
-                                        }>
-                                          {accident.cat.status}
-                                        </Badge>
-                                      </div>
+                                    <h4 className="font-semibold mb-2">CAT</h4>
+                                    <div className="space-y-1">
+                                      <div>Número: {accident.cat.number}</div>
+                                      <div>Data de Abertura: {accident.cat.openingDate}</div>
+                                      <div>Status: {accident.cat.status}</div>
                                     </div>
                                   </div>
                                 )}
@@ -609,142 +776,6 @@ const Accidents = () => {
             </CardContent>
           </Card>
         </TabsContent>
-
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="sm:max-w-[525px]">
-            <DialogHeader>
-              <DialogTitle>Editar Registro de Acidente</DialogTitle>
-              <DialogDescription>
-                Adicione eventos na linha do tempo e atualize informações do CAT.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label>Novo Evento na Linha do Tempo</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label>Data</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !editData.timelineEvent.date && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {editData.timelineEvent.date ? (
-                            format(editData.timelineEvent.date, "dd/MM/yyyy", { locale: ptBR })
-                          ) : (
-                            <span>Selecione uma data</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={editData.timelineEvent.date}
-                          onSelect={(date) => date && setEditData({
-                            ...editData,
-                            timelineEvent: { ...editData.timelineEvent, date }
-                          })}
-                          initialFocus
-                          locale={ptBR}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div>
-                    <Label>Hora</Label>
-                    <Input
-                      type="time"
-                      value={editData.timelineEvent.time}
-                      onChange={(e) => setEditData({
-                        ...editData,
-                        timelineEvent: { ...editData.timelineEvent, time: e.target.value }
-                      })}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label>Descrição do Evento</Label>
-                  <Textarea
-                    value={editData.timelineEvent.description}
-                    onChange={(e) => setEditData({
-                      ...editData,
-                      timelineEvent: { ...editData.timelineEvent, description: e.target.value }
-                    })}
-                    placeholder="Descreva o evento"
-                  />
-                </div>
-              </div>
-              <Separator />
-              <div className="grid gap-2">
-                <Label>Informações do CAT</Label>
-                <div className="grid gap-2">
-                  <div>
-                    <Label>Número do CAT</Label>
-                    <Input
-                      value={editData.cat.number}
-                      onChange={(e) => setEditData({
-                        ...editData,
-                        cat: { ...editData.cat, number: e.target.value }
-                      })}
-                      placeholder="Número do CAT"
-                    />
-                  </div>
-                  <div>
-                    <Label>Status do CAT</Label>
-                    <Select
-                      value={editData.cat.status}
-                      onValueChange={(value: 'Aberto' | 'Enviado' | 'Processado') => setEditData({
-                        ...editData,
-                        cat: { ...editData.cat, status: value }
-                      })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Aberto">Aberto</SelectItem>
-                        <SelectItem value="Enviado">Enviado</SelectItem>
-                        <SelectItem value="Processado">Processado</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button onClick={() => {
-                if (selectedAccident && editData.timelineEvent.time && editData.timelineEvent.description) {
-                  setRegisteredAccidents(accidents => accidents.map(accident => {
-                    if (accident.id === selectedAccident.id) {
-                      const newTimeline = [...(accident.timeline || []), {
-                        date: format(editData.timelineEvent.date, 'dd/MM/yyyy'),
-                        time: editData.timelineEvent.time,
-                        description: editData.timelineEvent.description
-                      }];
-                      
-                      return {
-                        ...accident,
-                        timeline: newTimeline,
-                        cat: {
-                          number: editData.cat.number,
-                          openingDate: accident.cat?.openingDate || format(new Date(), 'dd/MM/yyyy'),
-                          status: editData.cat.status
-                        }
-                      };
-                    }
-                    return accident;
-                  }));
-                  setIsEditDialogOpen(false);
-                }
-              }}>Salvar Alterações</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
         <TabsContent value="near-miss">
           <Card>
@@ -769,26 +800,65 @@ const Accidents = () => {
                   </thead>
                   <tbody>
                     {nearMisses.map((nearMiss) => (
-                      <tr key={nearMiss.id} className="bg-white border-b hover:bg-gray-50">
-                        <td className="px-6 py-4">{nearMiss.date}</td>
-                        <td className="px-6 py-4">{nearMiss.location}</td>
-                        <td className="px-6 py-4">{nearMiss.reportedBy}</td>
-                        <td className="px-6 py-4">{nearMiss.type}</td>
-                        <td className="px-6 py-4">
-                          <Badge variant="outline" className={
-                            nearMiss.status === 'Em análise' ? 'text-safety-blue' :
-                            'text-safety-green'
-                          }>
-                            {nearMiss.status}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm">Ver</Button>
-                            <Button variant="outline" size="sm">Editar</Button>
-                          </div>
-                        </td>
-                      </tr>
+                      <React.Fragment key={nearMiss.id}>
+                        <tr className="bg-white border-b hover:bg-gray-50">
+                          <td className="px-6 py-4">{nearMiss.date}</td>
+                          <td className="px-6 py-4">{nearMiss.location}</td>
+                          <td className="px-6 py-4">{nearMiss.reportedBy}</td>
+                          <td className="px-6 py-4">{nearMiss.type}</td>
+                          <td className="px-6 py-4">
+                            <Select
+                              value={nearMiss.status}
+                              onValueChange={(value: 'Em análise' | 'Resolvido') => {
+                                setNearMisses(nearMisses => nearMisses.map(nm => {
+                                  if (nm.id === nearMiss.id) {
+                                    return { ...nm, status: value };
+                                  }
+                                  return nm;
+                                }));
+                              }}
+                            >
+                              <SelectTrigger className="w-[140px]">
+                                <SelectValue>
+                                  <Badge variant="outline" className={
+                                    nearMiss.status === 'Em análise' ? 'text-safety-blue' :
+                                    'text-safety-green'
+                                  }>
+                                    {nearMiss.status}
+                                  </Badge>
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Em análise">Em análise</SelectItem>
+                                <SelectItem value="Resolvido">Resolvido</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => toggleNearMissDetails(nearMiss.id)}
+                              >
+                                {nearMiss.isExpanded ? 'Ocultar' : 'Ver'}
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                        {nearMiss.isExpanded && (
+                          <tr className="bg-gray-50">
+                            <td colSpan={6} className="px-6 py-4">
+                              <div className="space-y-4">
+                                <div>
+                                  <h4 className="font-semibold mb-2">Descrição da Ocorrência</h4>
+                                  <p>{nearMiss.description}</p>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
                     ))}
                   </tbody>
                 </table>
