@@ -29,9 +29,7 @@ export function InspectionDetails() {
   const [inspection, setInspection] = useState<Inspection | null>(
     location.state?.inspection || null
   );
-  const { withErrorHandling, loading } = useErrorHandler({
-    defaultErrorMessage: "Erro ao carregar detalhes da inspeção"
-  });
+  const { withErrorHandling, loading } = useErrorHandler();
 
   // Fetch inspection data only if not available in location state
   React.useEffect(() => {
@@ -51,7 +49,7 @@ export function InspectionDetails() {
             hasReport: false
           };
           setInspection(mockInspection);
-        });
+        }, "Erro ao carregar detalhes da inspeção");
       };
       
       fetchInspection();

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
   AlertTriangle, 
-  Calendar, 
+  Calendar as CalendarIcon, 
   FileText, 
   Clock, 
   User, 
@@ -13,12 +13,121 @@ import {
   Plus
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
+
+interface Accident {
+  id: number;
+  date: string;
+  time: string;
+  location: string;
+  victim: string;
+  type: string;
+  severity: 'Leve' | 'Médio' | 'Grave';
+  description: string;
+  status: 'Em análise' | 'Concluído';
+  isExpanded?: boolean;
+  timeline?: {
+    date: string;
+    time: string;
+    description: string;
+  }[];
+  cat?: {
+    number: string;
+    openingDate: string;
+    status: 'Aberto' | 'Enviado' | 'Processado';
+  };
+}
+
+interface EditAccidentData {
+  timelineEvent: {
+    date: Date;
+    time: string;
+    description: string;
+  };
+  cat: {
+    number: string;
+    status: 'Aberto' | 'Enviado' | 'Processado';
+  };
+}
+
+interface NearMiss {
+  id: number;
+  date: string;
+  time: string;
+  location: string;
+  reportedBy: string;
+  type: string;
+  description: string;
+  status: 'Em análise' | 'Resolvido';
+}
+
+interface NewRecord {
+  type: 'accident' | 'near-miss';
+  date: Date;
+  time: string;
+  location: string;
+  victim: string;
+  accidentType: string;
+  severity: 'Leve' | 'Médio' | 'Grave';
+  description: string;
+  reportedBy: string;
+  status: 'Em análise' | 'Concluído' | 'Resolvido';
+}
 
 const Accidents = () => {
   const [activeTab, setActiveTab] = useState('registered');
-  
-  // Dados de exemplo para acidentes registrados
-  const registeredAccidents = [
+  const [isNewRecordDialogOpen, setIsNewRecordDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedAccident, setSelectedAccident] = useState<Accident | null>(null);
+  const [editData, setEditData] = useState<EditAccidentData>({
+    timelineEvent: {
+      date: new Date(),
+      time: '',
+      description: ''
+    },
+    cat: {
+      number: '',
+      status: 'Aberto'
+    }
+  });
+  const toggleAccidentDetails = (accidentId: number) => {
+    setRegisteredAccidents(accidents => accidents.map(accident => {
+      if (accident.id === accidentId) {
+        return { ...accident, isExpanded: !accident.isExpanded };
+      }
+      return accident;
+    }));
+  };
+
+  const [registeredAccidents, setRegisteredAccidents] = useState<Accident[]>([
     {
       id: 1,
       date: '10/04/2025',
@@ -28,7 +137,18 @@ const Accidents = () => {
       type: 'Queda',
       severity: 'Médio',
       description: 'Queda de escada durante manutenção de equipamento.',
-      status: 'Em análise'
+      status: 'Em análise',
+      timeline: [
+        { date: '10/04/2025', time: '09:45', description: 'Ocorrência do acidente' },
+        { date: '10/04/2025', time: '09:50', description: 'Acionamento do serviço médico' },
+        { date: '10/04/2025', time: '10:15', description: 'Atendimento médico inicial' },
+        { date: '10/04/2025', time: '11:00', description: 'Início da investigação do acidente' }
+      ],
+      cat: {
+        number: 'CAT-2025-001',
+        openingDate: '10/04/2025',
+        status: 'Aberto'
+      }
     },
     {
       id: 2,
@@ -39,7 +159,18 @@ const Accidents = () => {
       type: 'Colisão',
       severity: 'Leve',
       description: 'Colisão entre veículos no estacionamento da empresa.',
-      status: 'Concluído'
+      status: 'Concluído',
+      timeline: [
+        { date: '02/04/2025', time: '14:30', description: 'Ocorrência do acidente' },
+        { date: '02/04/2025', time: '14:35', description: 'Avaliação inicial no local' },
+        { date: '02/04/2025', time: '15:00', description: 'Registro do acidente' },
+        { date: '03/04/2025', time: '09:00', description: 'Conclusão da investigação' }
+      ],
+      cat: {
+        number: 'CAT-2025-002',
+        openingDate: '02/04/2025',
+        status: 'Processado'
+      }
     },
     {
       id: 3,
@@ -50,12 +181,22 @@ const Accidents = () => {
       type: 'Corte',
       severity: 'Leve',
       description: 'Corte na mão ao manusear material cortante.',
-      status: 'Concluído'
+      status: 'Concluído',
+      timeline: [
+        { date: '25/03/2025', time: '11:20', description: 'Ocorrência do acidente' },
+        { date: '25/03/2025', time: '11:25', description: 'Primeiros socorros' },
+        { date: '25/03/2025', time: '11:40', description: 'Registro do acidente' },
+        { date: '26/03/2025', time: '10:00', description: 'Conclusão da investigação' }
+      ],
+      cat: {
+        number: 'CAT-2025-003',
+        openingDate: '25/03/2025',
+        status: 'Processado'
+      }
     }
-  ];
-  
-  // Dados de exemplo para quase-acidentes
-  const nearMisses = [
+  ]);
+
+  const [nearMisses, setNearMisses] = useState<NearMiss[]>([
     {
       id: 1,
       date: '08/04/2025',
@@ -76,15 +217,220 @@ const Accidents = () => {
       description: 'Pequeno vazamento de óleo próximo à máquina de corte.',
       status: 'Em análise'
     }
-  ];
+  ]);
+
+  const [newRecord, setNewRecord] = useState<NewRecord>({
+    type: 'accident',
+    date: new Date(),
+    time: '',
+    location: '',
+    victim: '',
+    accidentType: '',
+    severity: 'Leve',
+    description: '',
+    reportedBy: '',
+    status: 'Em análise'
+  });
+
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setNewRecord({ ...newRecord, date });
+    }
+  };
+
+  const handleSaveRecord = () => {
+    if (newRecord.type === 'accident') {
+      const newAccident: Accident = {
+        id: registeredAccidents.length + 1,
+        date: format(newRecord.date, 'dd/MM/yyyy'),
+        time: newRecord.time,
+        location: newRecord.location,
+        victim: newRecord.victim,
+        type: newRecord.accidentType,
+        severity: newRecord.severity,
+        description: newRecord.description,
+        status: newRecord.status as 'Em análise' | 'Concluído'
+      };
+      setRegisteredAccidents([newAccident, ...registeredAccidents]);
+    } else {
+      const newNearMiss: NearMiss = {
+        id: nearMisses.length + 1,
+        date: format(newRecord.date, 'dd/MM/yyyy'),
+        time: newRecord.time,
+        location: newRecord.location,
+        reportedBy: newRecord.reportedBy,
+        type: newRecord.accidentType,
+        description: newRecord.description,
+        status: newRecord.status as 'Em análise' | 'Resolvido'
+      };
+      setNearMisses([newNearMiss, ...nearMisses]);
+    }
+
+    setIsNewRecordDialogOpen(false);
+    setNewRecord({
+      type: 'accident',
+      date: new Date(),
+      time: '',
+      location: '',
+      victim: '',
+      accidentType: '',
+      severity: 'Leve',
+      description: '',
+      reportedBy: '',
+      status: 'Em análise'
+    });
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-white">Gestão de Acidentes e Quase-Acidentes</h1>
-        <Button className="bg-white hover:bg-white/90 text-black border border-gray-200">
-          <Plus className="mr-2 h-4 w-4" /> Novo Registro
-        </Button>
+        <Dialog open={isNewRecordDialogOpen} onOpenChange={setIsNewRecordDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-white hover:bg-white/90 text-black border border-gray-200">
+              <Plus className="mr-2 h-4 w-4" /> Novo Registro
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[525px]">
+            <DialogHeader>
+              <DialogTitle>Novo Registro de Ocorrência</DialogTitle>
+              <DialogDescription>
+                Preencha os detalhes da ocorrência para registro.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-1 gap-3">
+                <Label>Tipo de Registro</Label>
+                <Select
+                  value={newRecord.type}
+                  onValueChange={(value: 'accident' | 'near-miss') => 
+                    setNewRecord({ ...newRecord, type: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="accident">Acidente</SelectItem>
+                    <SelectItem value="near-miss">Quase-Acidente</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Data</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !newRecord.date && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {newRecord.date ? (
+                          format(newRecord.date, "dd/MM/yyyy", { locale: ptBR })
+                        ) : (
+                          <span>Selecione uma data</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={newRecord.date}
+                        onSelect={handleDateSelect}
+                        initialFocus
+                        locale={ptBR}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div>
+                  <Label>Hora</Label>
+                  <Input
+                    type="time"
+                    value={newRecord.time}
+                    onChange={(e) => setNewRecord({ ...newRecord, time: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                <Label>Local</Label>
+                <Input
+                  placeholder="Local da ocorrência"
+                  value={newRecord.location}
+                  onChange={(e) => setNewRecord({ ...newRecord, location: e.target.value })}
+                />
+              </div>
+
+              {newRecord.type === 'accident' ? (
+                <>
+                  <div className="grid grid-cols-1 gap-3">
+                    <Label>Funcionário Envolvido</Label>
+                    <Input
+                      placeholder="Nome do funcionário"
+                      value={newRecord.victim}
+                      onChange={(e) => setNewRecord({ ...newRecord, victim: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 gap-3">
+                    <Label>Gravidade</Label>
+                    <Select
+                      value={newRecord.severity}
+                      onValueChange={(value: 'Leve' | 'Médio' | 'Grave') =>
+                        setNewRecord({ ...newRecord, severity: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a gravidade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Leve">Leve</SelectItem>
+                        <SelectItem value="Médio">Médio</SelectItem>
+                        <SelectItem value="Grave">Grave</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              ) : (
+                <div className="grid grid-cols-1 gap-3">
+                  <Label>Reportado Por</Label>
+                  <Input
+                    placeholder="Nome de quem reportou"
+                    value={newRecord.reportedBy}
+                    onChange={(e) => setNewRecord({ ...newRecord, reportedBy: e.target.value })}
+                  />
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 gap-3">
+                <Label>Tipo de {newRecord.type === 'accident' ? 'Acidente' : 'Ocorrência'}</Label>
+                <Input
+                  placeholder={`Tipo de ${newRecord.type === 'accident' ? 'acidente' : 'ocorrência'}`}
+                  value={newRecord.accidentType}
+                  onChange={(e) => setNewRecord({ ...newRecord, accidentType: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                <Label>Descrição</Label>
+                <Textarea
+                  placeholder="Descreva detalhadamente o ocorrido"
+                  value={newRecord.description}
+                  onChange={(e) => setNewRecord({ ...newRecord, description: e.target.value })}
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={handleSaveRecord}>Registrar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Tabs defaultValue="registered" className="w-full">
@@ -127,146 +473,285 @@ const Accidents = () => {
                   </thead>
                   <tbody>
                     {registeredAccidents.map((accident) => (
-                      <tr key={accident.id} className="bg-white border-b hover:bg-gray-50">
-                        <td className="px-6 py-4">{accident.date}</td>
-                        <td className="px-6 py-4">{accident.location}</td>
-                        <td className="px-6 py-4">{accident.victim}</td>
-                        <td className="px-6 py-4">{accident.type}</td>
-                        <td className="px-6 py-4">
-                          <Badge className={
-                            accident.severity === 'Grave' ? 'bg-safety-red' : 
-                            accident.severity === 'Médio' ? 'bg-safety-orange' : 
-                            'bg-safety-green'
-                          }>
-                            {accident.severity}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4">
-                          <Badge variant="outline" className={
-                            accident.status === 'Em análise' ? 'text-safety-blue' :
-                            'text-safety-green'
-                          }>
-                            {accident.status}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm">Ver</Button>
-                            <Button variant="outline" size="sm">Editar</Button>
-                          </div>
-                        </td>
-                      </tr>
+                      <React.Fragment key={accident.id}>
+                        <tr className="bg-white border-b hover:bg-gray-50">
+                          <td className="px-6 py-4">{accident.date}</td>
+                          <td className="px-6 py-4">{accident.location}</td>
+                          <td className="px-6 py-4">{accident.victim}</td>
+                          <td className="px-6 py-4">{accident.type}</td>
+                          <td className="px-6 py-4">
+                            <Badge className={
+                              accident.severity === 'Grave' ? 'bg-safety-red' : 
+                              accident.severity === 'Médio' ? 'bg-safety-orange' : 
+                              'bg-safety-green'
+                            }>
+                              {accident.severity}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4">
+                            <Select
+                              value={accident.status}
+                              onValueChange={(value: 'Em análise' | 'Concluído') => {
+                                setRegisteredAccidents(accidents => accidents.map(acc => {
+                                  if (acc.id === accident.id) {
+                                    return { ...acc, status: value };
+                                  }
+                                  return acc;
+                                }));
+                              }}
+                            >
+                              <SelectTrigger className="w-[140px]">
+                                <SelectValue>
+                                  <Badge variant="outline" className={
+                                    accident.status === 'Em análise' ? 'text-safety-blue' :
+                                    'text-safety-green'
+                                  }>
+                                    {accident.status}
+                                  </Badge>
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Em análise">Em análise</SelectItem>
+                                <SelectItem value="Concluído">Concluído</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => toggleAccidentDetails(accident.id)}
+                              >
+                                {accident.isExpanded ? 'Ocultar' : 'Ver'}
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedAccident(accident);
+                                  setEditData({
+                                    timelineEvent: {
+                                      date: new Date(),
+                                      time: '',
+                                      description: ''
+                                    },
+                                    cat: {
+                                      number: accident.cat?.number || '',
+                                      status: accident.cat?.status || 'Aberto'
+                                    }
+                                  });
+                                  setIsEditDialogOpen(true);
+                                }}
+                              >
+                                Editar
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                        {accident.isExpanded && (
+                          <tr>
+                            <td colSpan={7} className="bg-gray-50 px-6 py-4">
+                              <div className="space-y-4">
+                                <div>
+                                  <h4 className="text-sm font-semibold mb-2">Descrição do Acidente</h4>
+                                  <p className="text-sm text-gray-600">{accident.description}</p>
+                                </div>
+                                
+                                {accident.timeline && (
+                                  <div>
+                                    <h4 className="text-sm font-semibold mb-2">Linha do Tempo</h4>
+                                    <div className="space-y-2">
+                                      {accident.timeline.map((event, index) => (
+                                        <div key={index} className="flex gap-4 text-sm">
+                                          <div className="text-gray-500">{event.date} {event.time}</div>
+                                          <div>{event.description}</div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {accident.cat && (
+                                  <div>
+                                    <h4 className="text-sm font-semibold mb-2">Informações CAT</h4>
+                                    <div className="grid grid-cols-3 gap-4 text-sm">
+                                      <div>
+                                        <span className="text-gray-500">Número: </span>
+                                        {accident.cat.number}
+                                      </div>
+                                      <div>
+                                        <span className="text-gray-500">Data de Abertura: </span>
+                                        {accident.cat.openingDate}
+                                      </div>
+                                      <div>
+                                        <span className="text-gray-500">Status: </span>
+                                        <Badge variant="outline" className={
+                                          accident.cat.status === 'Aberto' ? 'text-safety-blue' :
+                                          accident.cat.status === 'Enviado' ? 'text-safety-orange' :
+                                          'text-safety-green'
+                                        }>
+                                          {accident.cat.status}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
                     ))}
                   </tbody>
                 </table>
               </div>
             </CardContent>
           </Card>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Detalhes do Acidente
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500">Data e Hora</h3>
-                      <div className="flex items-center mt-1">
-                        <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                        <span>10/04/2025 - 09:45</span>
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500">Local</h3>
-                      <div className="flex items-center mt-1">
-                        <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                        <span>Setor de Produção - Linha 2</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500">Funcionário</h3>
-                      <div className="flex items-center mt-1">
-                        <User className="h-4 w-4 mr-2 text-gray-400" />
-                        <span>Carlos Santos - Técnico de Manutenção</span>
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500">Tipo de Acidente</h3>
-                      <div className="flex items-center mt-1">
-                        <AlertTriangle className="h-4 w-4 mr-2 text-safety-orange" />
-                        <span>Queda</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Descrição</h3>
-                    <p className="mt-1 text-sm text-gray-600">
-                      Queda de escada durante manutenção de equipamento. O funcionário estava realizando a manutenção de um equipamento
-                      quando perdeu o equilíbrio na escada e caiu de uma altura aproximada de 1,5 metros.
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Medidas tomadas</h3>
-                    <p className="mt-1 text-sm text-gray-600">
-                      Funcionário foi encaminhado ao pronto socorro para avaliação médica. Foi realizado o registro da CAT.
-                      A área foi isolada e a escada foi removida para análise.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Linha do Tempo
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="relative border-l border-gray-200 pl-4 pb-4">
-                    <div className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full bg-safety-blue"></div>
-                    <h3 className="text-sm font-semibold">Registro do acidente</h3>
-                    <p className="text-xs text-gray-500">10/04/2025 - 10:15</p>
-                    <p className="text-xs text-gray-600 mt-1">Técnico de segurança registrou o acidente</p>
-                  </div>
-                  
-                  <div className="relative border-l border-gray-200 pl-4 pb-4">
-                    <div className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full bg-safety-blue"></div>
-                    <h3 className="text-sm font-semibold">Atendimento médico</h3>
-                    <p className="text-xs text-gray-500">10/04/2025 - 10:30</p>
-                    <p className="text-xs text-gray-600 mt-1">Funcionário encaminhado para atendimento</p>
-                  </div>
-                  
-                  <div className="relative border-l border-gray-200 pl-4">
-                    <div className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full bg-safety-blue"></div>
-                    <h3 className="text-sm font-semibold">Emissão da CAT</h3>
-                    <p className="text-xs text-gray-500">10/04/2025 - 14:45</p>
-                    <p className="text-xs text-gray-600 mt-1">Comunicação de Acidente de Trabalho emitida</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         </TabsContent>
-        
+
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[525px]">
+            <DialogHeader>
+              <DialogTitle>Editar Registro de Acidente</DialogTitle>
+              <DialogDescription>
+                Adicione eventos na linha do tempo e atualize informações do CAT.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label>Novo Evento na Linha do Tempo</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label>Data</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !editData.timelineEvent.date && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {editData.timelineEvent.date ? (
+                            format(editData.timelineEvent.date, "dd/MM/yyyy", { locale: ptBR })
+                          ) : (
+                            <span>Selecione uma data</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={editData.timelineEvent.date}
+                          onSelect={(date) => date && setEditData({
+                            ...editData,
+                            timelineEvent: { ...editData.timelineEvent, date }
+                          })}
+                          initialFocus
+                          locale={ptBR}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div>
+                    <Label>Hora</Label>
+                    <Input
+                      type="time"
+                      value={editData.timelineEvent.time}
+                      onChange={(e) => setEditData({
+                        ...editData,
+                        timelineEvent: { ...editData.timelineEvent, time: e.target.value }
+                      })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>Descrição do Evento</Label>
+                  <Textarea
+                    value={editData.timelineEvent.description}
+                    onChange={(e) => setEditData({
+                      ...editData,
+                      timelineEvent: { ...editData.timelineEvent, description: e.target.value }
+                    })}
+                    placeholder="Descreva o evento"
+                  />
+                </div>
+              </div>
+              <Separator />
+              <div className="grid gap-2">
+                <Label>Informações do CAT</Label>
+                <div className="grid gap-2">
+                  <div>
+                    <Label>Número do CAT</Label>
+                    <Input
+                      value={editData.cat.number}
+                      onChange={(e) => setEditData({
+                        ...editData,
+                        cat: { ...editData.cat, number: e.target.value }
+                      })}
+                      placeholder="Número do CAT"
+                    />
+                  </div>
+                  <div>
+                    <Label>Status do CAT</Label>
+                    <Select
+                      value={editData.cat.status}
+                      onValueChange={(value: 'Aberto' | 'Enviado' | 'Processado') => setEditData({
+                        ...editData,
+                        cat: { ...editData.cat, status: value }
+                      })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Aberto">Aberto</SelectItem>
+                        <SelectItem value="Enviado">Enviado</SelectItem>
+                        <SelectItem value="Processado">Processado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => {
+                if (selectedAccident && editData.timelineEvent.time && editData.timelineEvent.description) {
+                  setRegisteredAccidents(accidents => accidents.map(accident => {
+                    if (accident.id === selectedAccident.id) {
+                      const newTimeline = [...(accident.timeline || []), {
+                        date: format(editData.timelineEvent.date, 'dd/MM/yyyy'),
+                        time: editData.timelineEvent.time,
+                        description: editData.timelineEvent.description
+                      }];
+                      
+                      return {
+                        ...accident,
+                        timeline: newTimeline,
+                        cat: {
+                          number: editData.cat.number,
+                          openingDate: accident.cat?.openingDate || format(new Date(), 'dd/MM/yyyy'),
+                          status: editData.cat.status
+                        }
+                      };
+                    }
+                    return accident;
+                  }));
+                  setIsEditDialogOpen(false);
+                }
+              }}>Salvar Alterações</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <TabsContent value="near-miss">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-safety-orange" />
-                Quase-Acidentes Reportados
+                Quase-Acidentes
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -276,25 +761,25 @@ const Accidents = () => {
                     <tr>
                       <th scope="col" className="px-6 py-3">Data</th>
                       <th scope="col" className="px-6 py-3">Local</th>
-                      <th scope="col" className="px-6 py-3">Reportado por</th>
+                      <th scope="col" className="px-6 py-3">Reportado Por</th>
                       <th scope="col" className="px-6 py-3">Tipo</th>
                       <th scope="col" className="px-6 py-3">Status</th>
                       <th scope="col" className="px-6 py-3">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {nearMisses.map((incident) => (
-                      <tr key={incident.id} className="bg-white border-b hover:bg-gray-50">
-                        <td className="px-6 py-4">{incident.date}</td>
-                        <td className="px-6 py-4">{incident.location}</td>
-                        <td className="px-6 py-4">{incident.reportedBy}</td>
-                        <td className="px-6 py-4">{incident.type}</td>
+                    {nearMisses.map((nearMiss) => (
+                      <tr key={nearMiss.id} className="bg-white border-b hover:bg-gray-50">
+                        <td className="px-6 py-4">{nearMiss.date}</td>
+                        <td className="px-6 py-4">{nearMiss.location}</td>
+                        <td className="px-6 py-4">{nearMiss.reportedBy}</td>
+                        <td className="px-6 py-4">{nearMiss.type}</td>
                         <td className="px-6 py-4">
                           <Badge variant="outline" className={
-                            incident.status === 'Em análise' ? 'text-safety-blue' :
+                            nearMiss.status === 'Em análise' ? 'text-safety-blue' :
                             'text-safety-green'
                           }>
-                            {incident.status}
+                            {nearMiss.status}
                           </Badge>
                         </td>
                         <td className="px-6 py-4">
