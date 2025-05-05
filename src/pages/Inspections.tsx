@@ -143,6 +143,17 @@ export default function Inspections() {
   const [selectedArea, setSelectedArea] = useState("Todos");
   const [selectedStatus, setSelectedStatus] = useState("Todos");
   const [isNewInspectionOpen, setIsNewInspectionOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("all");
+
+  // Resetar filtros ao mudar de aba
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    // Resetar filtros ao mudar para qualquer aba exceto "all"
+    if (value !== activeTab) {
+      setSelectedArea("Todos");
+      setSelectedStatus("Todos");
+    }
+  };
   const [newInspection, setNewInspection] = useState({
     title: "",
     type: "safety",
@@ -469,7 +480,7 @@ export default function Inspections() {
         </Dialog>
       </div>
 
-      <Tabs defaultValue="all" className="space-y-4">
+      <Tabs defaultValue="all" className="space-y-4" onValueChange={handleTabChange}>
         <TabsList>
           <TabsTrigger value="all">Todas as Inspeções</TabsTrigger>
           <TabsTrigger value="statistics">Estatísticas</TabsTrigger>
