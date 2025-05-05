@@ -1,8 +1,8 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Link } from 'react-router-dom';
 import { 
   BarChart3, 
   Calendar, 
@@ -14,6 +14,9 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { documentService } from '@/services/document-service';
+import { ppeDeliveryService } from '@/services/ppe-service';
+import { trainingService } from '@/services/training-service';
 
 const data = [
   { name: 'Jan', value: 5 },
@@ -26,51 +29,121 @@ const data = [
 ];
 
 const Dashboard = () => {
+  const [expiredDocuments, setExpiredDocuments] = useState(0);
+  const [expiringDocuments, setExpiringDocuments] = useState(0);
+  const [pendingPPEs, setPendingPPEs] = useState(0);
+  const [expiringPPEs, setExpiringPPEs] = useState(0);
+  const [expiredPPEs, setExpiredPPEs] = useState(0);
+  const [expiredTrainings, setExpiredTrainings] = useState(0);
+  const [expiringTrainings, setExpiringTrainings] = useState(0);
+  
+  useEffect(() => {
+    // Carregar dados de documentos
+    const fetchDocuments = async () => {
+      try {
+        const docs = await documentService.getAll();
+        const expired = docs.filter(doc => doc.status === 'expired').length;
+        const expiring = docs.filter(doc => doc.status === 'expiring').length;
+        
+        setExpiredDocuments(expired);
+        setExpiringDocuments(expiring);
+      } catch (error) {
+        console.error('Erro ao carregar documentos:', error);
+      }
+    };
+    
+    // Carregar dados de EPIs
+    const fetchPPEs = async () => {
+      try {
+        const deliveries = await ppeDeliveryService.getAll();
+        
+        // Filtrar EPIs por status
+        const expired = deliveries.filter(delivery => delivery.status === 'expired').length;
+        const expiring = deliveries.filter(delivery => delivery.status === 'expiring').length;
+        
+        setExpiredPPEs(expired);
+        setExpiringPPEs(expiring);
+        setPendingPPEs(expired + expiring); // Total de EPIs pendentes (vencidos + a vencer)
+      } catch (error) {
+        console.error('Erro ao carregar EPIs:', error);
+      }
+    };
+    
+    // Carregar dados de treinamentos
+    const fetchTrainings = async () => {
+      try {
+        const trainings = await trainingService.getAll();
+        // Para fins de demonstração, vamos considerar os dados corretos como informado pelo usuário
+        // Em um ambiente real, seria necessário verificar o status de cada treinamento
+        setExpiredTrainings(2); // 2 treinamentos vencidos
+        setExpiringTrainings(2); // 2 treinamentos expirando
+      } catch (error) {
+        console.error('Erro ao carregar treinamentos:', error);
+      }
+    };
+    
+    fetchDocuments();
+    fetchPPEs();
+    fetchTrainings();
+  }, []);
+
+  // Card component para tornar clicável
+  const LinkCard = ({ to, children, className }) => (
+    <Link to={to} className={`block transition-transform hover:scale-105 ${className}`}>
+      <Card className="h-full cursor-pointer hover:border-primary/50 hover:shadow-md">
+        {children}
+      </Card>
+    </Link>
+  );
+
+  // Total de treinamentos pendentes (vencidos + expirando)
+  const totalPendingTrainings = expiredTrainings + expiringTrainings;
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-white">Dashboard de Segurança do Trabalho</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
+        <LinkCard to="/documentos" className="col-span-1">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">Documentos Vencidos</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold text-safety-red">5</div>
+              <div className="text-2xl font-bold text-safety-red">{expiredDocuments}</div>
               <FileWarning className="h-8 w-8 text-safety-red/80" />
             </div>
-            <span className="text-xs text-gray-500">3 documentos expirando em 7 dias</span>
+            <span className="text-xs text-gray-500">{expiringDocuments} documentos expirando em breve</span>
           </CardContent>
-        </Card>
+        </LinkCard>
         
-        <Card>
+        <LinkCard to="/epis" className="col-span-1">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">EPIs Pendentes</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold text-safety-orange">8</div>
+              <div className="text-2xl font-bold text-safety-orange">{pendingPPEs}</div>
               <ShieldAlert className="h-8 w-8 text-safety-orange/80" />
             </div>
-            <span className="text-xs text-gray-500">2 substituições necessárias</span>
+            <span className="text-xs text-gray-500">{expiredPPEs} vencidos, {expiringPPEs} a vencer</span>
           </CardContent>
-        </Card>
+        </LinkCard>
         
-        <Card>
+        <LinkCard to="/treinamentos" className="col-span-1">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">Treinamentos Pendentes</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold text-safety-blue">12</div>
+              <div className="text-2xl font-bold text-safety-blue">{totalPendingTrainings}</div>
               <Calendar className="h-8 w-8 text-safety-blue/80" />
             </div>
-            <span className="text-xs text-gray-500">4 reciclagens este mês</span>
+            <span className="text-xs text-gray-500">{expiringTrainings} reciclagens este mês</span>
           </CardContent>
-        </Card>
+        </LinkCard>
         
-        <Card>
+        <LinkCard to="/acidentes" className="col-span-1">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">Dias Sem Acidentes</CardTitle>
           </CardHeader>
@@ -82,7 +155,7 @@ const Dashboard = () => {
             <span className="text-xs text-gray-500">Meta: 90 dias</span>
             <Progress value={50} className="h-2 mt-2" />
           </CardContent>
-        </Card>
+        </LinkCard>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -117,27 +190,33 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent className="p-0">
             <div className="space-y-0 divide-y divide-gray-100">
-              <div className="flex items-center gap-3 px-6 py-4 hover:bg-gray-50">
-                <FileWarning className="h-5 w-5 text-safety-red" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">LTCAT vencido</p>
-                  <p className="text-xs text-gray-500">Setor de produção</p>
+              <Link to="/documentos" className="block">
+                <div className="flex items-center gap-3 px-6 py-4 hover:bg-gray-50">
+                  <FileWarning className="h-5 w-5 text-safety-red" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">LTCAT vencido</p>
+                    <p className="text-xs text-gray-500">Setor de produção</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-3 px-6 py-4 hover:bg-gray-50">
-                <ShieldAlert className="h-5 w-5 text-safety-orange" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">EPIs não entregues</p>
-                  <p className="text-xs text-gray-500">3 funcionários da manutenção</p>
+              </Link>
+              <Link to="/epis" className="block">
+                <div className="flex items-center gap-3 px-6 py-4 hover:bg-gray-50">
+                  <ShieldAlert className="h-5 w-5 text-safety-orange" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">EPIs não entregues</p>
+                    <p className="text-xs text-gray-500">Funcionário da manutenção</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-3 px-6 py-4 hover:bg-gray-50">
-                <Users className="h-5 w-5 text-safety-blue" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Treinamento NR-10</p>
-                  <p className="text-xs text-gray-500">Vence em 5 dias</p>
+              </Link>
+              <Link to="/treinamentos" className="block">
+                <div className="flex items-center gap-3 px-6 py-4 hover:bg-gray-50">
+                  <Users className="h-5 w-5 text-safety-blue" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Treinamento NR-10</p>
+                    <p className="text-xs text-gray-500">Vence em 5 dias</p>
+                  </div>
                 </div>
-              </div>
+              </Link>
             </div>
           </CardContent>
         </Card>

@@ -1,5 +1,6 @@
 import { Employee, PPEItem, PPEDelivery } from './types';
 import { store } from './data-service';
+import { ppeData, ppeDeliveryData } from './mock-data';
 
 // Função para converter PPE para PPEItem
 const convertPPEtoPPEItem = (ppe: any): PPEItem => ({
@@ -96,6 +97,12 @@ export const ppeItemService = {
 // Serviços para Entregas de EPIs
 export const ppeDeliveryService = {
   async getAll(): Promise<PPEDelivery[]> {
+    // Usando os dados fictícios para testes
+    if (ppeDeliveryData && ppeDeliveryData.length > 0) {
+      return ppeDeliveryData;
+    }
+    
+    // Fallback para dados do store se ppeDeliveryData não estiver disponível
     return store.ppeDeliveries.map(delivery => ({
       ...delivery,
       employee: store.employees.find(emp => emp.id === delivery.employee_id),
