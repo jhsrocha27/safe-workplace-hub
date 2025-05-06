@@ -92,4 +92,5 @@ export interface Document {
   fileUrl?: string;
   created_at?: string;
   updated_at?: string;
+  linkTo: 'company' | 'employee';
 }

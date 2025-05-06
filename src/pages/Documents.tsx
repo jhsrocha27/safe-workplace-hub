@@ -31,6 +31,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { calculateDocumentStatus } from '@/utils/document-status';
 
 interface Document {
   id: number;
@@ -155,6 +156,8 @@ export default function Documents() {
       return;
     }
 
+    const documentStatus = calculateDocumentStatus(formData.expiryDate!);
+
     const newDocument: Document = {
       id: documentsData.length + 1,
       name: `${formData.type} - ${formData.company}`,
@@ -162,7 +165,7 @@ export default function Documents() {
       company: formData.company!,
       sector: formData.sector!,
       employee: formData.employee || undefined,
-      status: 'valid',
+      status: documentStatus.status,
       expiryDate: formData.expiryDate!,
       uploadDate: new Date().toISOString().split('T')[0],
       fileUrl: URL.createObjectURL(selectedFile),
