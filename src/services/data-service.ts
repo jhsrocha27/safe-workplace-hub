@@ -1,5 +1,7 @@
 import { Employee, PPE, PPEDelivery, Accident, Training, Communication, Document } from './types';
 
+import { mockDocuments } from './mock-documents';
+
 // Armazenamento temporário em memória
 export const store = {
   employees: [] as Employee[],
@@ -8,7 +10,7 @@ export const store = {
   accidents: [] as Accident[],
   trainings: [] as Training[],
   communications: [] as Communication[],
-  documents: [] as Document[],
+  documents: [...mockDocuments] as Document[],
 };
 
 // Função auxiliar para gerar IDs únicos

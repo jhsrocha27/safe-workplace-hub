@@ -42,11 +42,12 @@ const Dashboard = () => {
     const fetchDocuments = async () => {
       try {
         const docs = await documentService.getAll();
-        const expired = docs.filter(doc => doc.status === 'expired').length;
-        const expiring = docs.filter(doc => doc.status === 'expiring').length;
+        // Filtra todos os documentos vencidos e a vencer, independente do tipo
+        const expiredDocs = docs.filter(doc => doc.status === 'expired');
+        const expiringDocs = docs.filter(doc => doc.status === 'expiring');
         
-        setExpiredDocuments(expired);
-        setExpiringDocuments(expiring);
+        setExpiredDocuments(expiredDocs.length);
+        setExpiringDocuments(expiringDocs.length);
       } catch (error) {
         console.error('Erro ao carregar documentos:', error);
       }
@@ -104,9 +105,9 @@ const Dashboard = () => {
       <h1 className="text-2xl font-bold text-white">Dashboard de Segurança do Trabalho</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <LinkCard to="/documentos" className="col-span-1">
+        <LinkCard to="/documentos?filter=expiring" className="col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Documentos Vencidos</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500">Documentos prestes a vencer</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">

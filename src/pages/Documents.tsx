@@ -124,6 +124,16 @@ export default function Documents() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [currentTab, setCurrentTab] = useState('all');
   const [selectedType, setSelectedType] = useState('');
+  
+  const searchParams = new URLSearchParams(window.location.search);
+  const filterParam = searchParams.get('filter');
+  
+  React.useEffect(() => {
+    if (filterParam === 'expiring') {
+      setCurrentTab('expiring');
+    }
+  }, [filterParam]);
+
   const [formData, setFormData] = useState<Partial<Document>>({  
     name: '',
     type: '',
@@ -228,22 +238,8 @@ export default function Documents() {
     return matchesSearch && matchesTab && matchesType;
   });
 
-  const renderStatusBadge = (status: Document['status']) => {
-    const statusConfig = {
-      valid: { text: 'Válido', className: 'bg-green-500' },
-      expiring: { text: 'A vencer', className: 'bg-yellow-500' },
-      expired: { text: 'Vencido', className: 'bg-red-500' }
-    };
-
-    return (
-      <Badge className={statusConfig[status].className}>
-        {statusConfig[status].text}
-      </Badge>
-    );
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto py-6 space-y-6">
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader>
@@ -275,7 +271,9 @@ export default function Documents() {
       </Dialog>
 
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Documentos Legais</h1>
+        <h1 className="text-2xl font-bold text-white">
+          {currentTab === 'expiring' ? 'Documentos Prestes a Vencer' : 'Documentos Legais'}
+        </h1>
         
         <Dialog>
           <DialogTrigger asChild>
@@ -416,9 +414,13 @@ export default function Documents() {
       
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle>Gerenciamento de Documentos</CardTitle>
+          <CardTitle>
+            {currentTab === 'expiring' ? 'Documentos Prestes a Vencer' : 'Gerenciamento de Documentos'}
+          </CardTitle>
           <CardDescription>
-            Gerencie todos os documentos legais de SST, controle vencimentos e mantenha-se em conformidade.
+            {currentTab === 'expiring' 
+              ? 'Lista de documentos que estão próximos do vencimento e requerem atenção.'
+              : 'Gerencie todos os documentos legais de SST, controle vencimentos e mantenha-se em conformidade.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -435,80 +437,140 @@ export default function Documents() {
             </div>
           </div>
 
-          <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="employees" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Funcionários
-              </TabsTrigger>
-              <TabsTrigger value="company" className="flex items-center gap-2">
-                <FileArchive className="h-4 w-4" />
-                Empresa
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="employees" className="mt-6">
-              <div className="grid grid-cols-4 gap-6">
-                <Card className="col-span-1">
-                  <CardHeader>
-                    <CardTitle className="text-lg">Funcionários</CardTitle>
-                    <CardDescription>Selecione um funcionário para ver seus documentos</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-                        <Input 
-                          type="search"
-                          placeholder="Buscar funcionário..." 
-                          className="pl-8"
-                          value={searchEmployeeTerm}
-                          onChange={(e) => setSearchEmployeeTerm(e.target.value)}
-                        />
+          {currentTab === 'expiring' ? (
+            <div className="space-y-4">
+              {filteredDocuments
+                .filter(doc => doc.status === 'expiring')
+                .map(doc => (
+                  <div key={doc.id} className="p-4 border rounded-lg space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-medium text-lg">{doc.name}</h3>
+                      <Badge 
+                        variant={
+                          doc.status === 'valid' ? 'default' :
+                          doc.status === 'expiring' ? 'warning' : 'destructive'
+                        }
+                      >
+                        {doc.status === 'valid' ? 'Válido' :
+                         doc.status === 'expiring' ? 'A vencer' : 'Vencido'}
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm text-gray-500">
+                      <div>
+                        <p><strong>Tipo:</strong> {doc.type}</p>
+                        <p><strong>Empresa:</strong> {doc.company}</p>
+                        <p><strong>Setor:</strong> {doc.sector}</p>
                       </div>
-                      <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                        {documentsData
-                          .filter(doc => doc.employee)
-                          .map(doc => doc.employee)
-                          .filter((employee, index, self) => 
-                            employee && 
-                            self.indexOf(employee) === index &&
-                            employee.toLowerCase().includes(searchEmployeeTerm.toLowerCase())
-                          )
-                          .map(employee => (
-                            <Button
-                              key={employee}
-                              variant={selectedEmployee === employee ? "default" : "outline"}
-                              className="w-full justify-start"
-                              onClick={() => setSelectedEmployee(employee)}
-                            >
-                              {employee}
-                            </Button>
-                          ))}
+                      <div>
+                        <p><strong>Data de Validade:</strong> {doc.expiryDate}</p>
+                        <p><strong>Vínculo:</strong> {doc.linkTo === 'company' ? 'Empresa' : 'Funcionário'}</p>
+                        {doc.employee && (
+                          <p><strong>Funcionário:</strong> {doc.employee}</p>
+                        )}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                    <div className="flex justify-end gap-2 mt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedDocument(doc);
+                          setViewDialogOpen(true);
+                        }}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Visualizar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="employees" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Funcionários
+                </TabsTrigger>
+                <TabsTrigger value="company" className="flex items-center gap-2">
+                  <FileArchive className="h-4 w-4" />
+                  Empresa
+                </TabsTrigger>
+              </TabsList>
 
-                <Card className="col-span-3">
-                  <CardHeader>
-                    <CardTitle className="text-lg">
-                      {selectedEmployee ? `Documentos de ${selectedEmployee}` : "Selecione um funcionário"}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {selectedEmployee && (
+              <TabsContent value="employees" className="mt-6">
+                <div className="grid grid-cols-4 gap-6">
+                  <Card className="col-span-1">
+                    <CardHeader>
+                      <CardTitle className="text-lg">Funcionários</CardTitle>
+                      <CardDescription>Selecione um funcionário para ver seus documentos</CardDescription>
+                    </CardHeader>
+                    <CardContent>
                       <div className="space-y-4">
-                        {documentsData
+                        <div className="relative">
+                          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                          <Input 
+                            type="search"
+                            placeholder="Buscar funcionário..." 
+                            className="pl-8"
+                            value={searchEmployeeTerm}
+                            onChange={(e) => setSearchEmployeeTerm(e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                          {documentsData
+                            .filter(doc => doc.employee)
+                            .map(doc => doc.employee)
+                            .filter((employee, index, self) => 
+                              employee && 
+                              self.indexOf(employee) === index &&
+                              employee.toLowerCase().includes(searchEmployeeTerm.toLowerCase())
+                            )
+                            .map(employee => (
+                              <div
+                                key={employee}
+                                className={`p-2 rounded-md cursor-pointer hover:bg-gray-100 ${selectedEmployee === employee ? 'bg-gray-100' : ''}`}
+                                onClick={() => setSelectedEmployee(employee)}
+                              >
+                                {employee}
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <div className="col-span-3">
+                    {selectedEmployee ? (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-medium">Documentos de {selectedEmployee}</h3>
+                        {filteredDocuments
                           .filter(doc => doc.employee === selectedEmployee)
                           .map(doc => (
-                            <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg">
-                              <div className="flex-1">
-                                <h3 className="font-medium">{doc.name}</h3>
-                                <p className="text-sm text-gray-500">Validade: {doc.expiryDate}</p>
+                            <div key={doc.id} className="p-4 border rounded-lg space-y-2">
+                              <div className="flex items-center justify-between">
+                                <h3 className="font-medium text-lg">{doc.name}</h3>
+                                <Badge 
+                                  variant={
+                                    doc.status === 'valid' ? 'default' :
+                                    doc.status === 'expiring' ? 'warning' : 'destructive'
+                                  }
+                                >
+                                  {doc.status === 'valid' ? 'Válido' :
+                                   doc.status === 'expiring' ? 'A vencer' : 'Vencido'}
+                                </Badge>
                               </div>
-                              <div className="flex items-center gap-2">
-                                {renderStatusBadge(doc.status)}
+                              <div className="grid grid-cols-2 gap-4 text-sm text-gray-500">
+                                <div>
+                                  <p><strong>Tipo:</strong> {doc.type}</p>
+                                  <p><strong>Empresa:</strong> {doc.company}</p>
+                                  <p><strong>Setor:</strong> {doc.sector}</p>
+                                </div>
+                                <div>
+                                  <p><strong>Data de Validade:</strong> {doc.expiryDate}</p>
+                                  <p><strong>Data de Upload:</strong> {doc.uploadDate}</p>
+                                </div>
+                              </div>
+                              <div className="flex justify-end gap-2 mt-2">
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -517,72 +579,86 @@ export default function Documents() {
                                     setViewDialogOpen(true);
                                   }}
                                 >
-                                  <FileText className="h-4 w-4" />
+                                  <FileText className="h-4 w-4 mr-2" />
+                                  Visualizar
                                 </Button>
                                 <Button
-                                  variant="outline"
+                                  variant="destructive"
                                   size="sm"
-                                  className="text-red-500 hover:text-red-700"
                                   onClick={() => handleDeleteDocument(doc.id)}
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Excluir
                                 </Button>
                               </div>
                             </div>
                           ))}
                       </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-gray-500">
+                        Selecione um funcionário para ver seus documentos
+                      </div>
                     )}
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
+                  </div>
+                </div>
+              </TabsContent>
 
-            <TabsContent value="company" className="mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Documentos da Empresa</CardTitle>
-                  <CardDescription>Documentos gerais e por setor</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {documentsData
-                      .filter(doc => !doc.employee)
-                      .map(doc => (
-                        <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg">
-                          <div className="flex-1">
-                            <h3 className="font-medium">{doc.name}</h3>
-                            <p className="text-sm text-gray-500">
-                              Setor: {doc.sector} | Validade: {doc.expiryDate}
-                            </p>
+              <TabsContent value="company" className="mt-6">
+                <div className="space-y-4">
+                  {filteredDocuments
+                    .filter(doc => doc.linkTo === 'company')
+                    .map(doc => (
+                      <div key={doc.id} className="p-4 border rounded-lg space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-medium text-lg">{doc.name}</h3>
+                          <Badge 
+                            variant={
+                              doc.status === 'valid' ? 'default' :
+                              doc.status === 'expiring' ? 'warning' : 'destructive'
+                            }
+                          >
+                            {doc.status === 'valid' ? 'Válido' :
+                             doc.status === 'expiring' ? 'A vencer' : 'Vencido'}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm text-gray-500">
+                          <div>
+                            <p><strong>Tipo:</strong> {doc.type}</p>
+                            <p><strong>Empresa:</strong> {doc.company}</p>
+                            <p><strong>Setor:</strong> {doc.sector}</p>
                           </div>
-                          <div className="flex items-center gap-2">
-                            {renderStatusBadge(doc.status)}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedDocument(doc);
-                                setViewDialogOpen(true);
-                              }}
-                            >
-                              <FileText className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-red-500 hover:text-red-700"
-                              onClick={() => handleDeleteDocument(doc.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                          <div>
+                            <p><strong>Data de Validade:</strong> {doc.expiryDate}</p>
+                            <p><strong>Data de Upload:</strong> {doc.uploadDate}</p>
                           </div>
                         </div>
-                      ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                        <div className="flex justify-end gap-2 mt-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedDocument(doc);
+                              setViewDialogOpen(true);
+                            }}
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            Visualizar
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteDocument(doc.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Excluir
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </TabsContent>
+            </Tabs>
+          )}
         </CardContent>
       </Card>
     </div>
