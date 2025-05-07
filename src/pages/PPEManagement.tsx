@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { calculatePPEStatus, formatExpiryDate } from '@/utils/ppe-status';
 import { useToast } from "@/hooks/use-toast";
 import { usePPEForm } from '@/hooks/use-ppe-form';
+import { useEmployees } from '@/hooks/use-employees';
 import {
   Card,
   CardContent,
@@ -109,18 +110,12 @@ const ppeDeliveryData: PPEDelivery[] = [
   { id: 5, employeeId: 104, employeeName: 'Juliana Costa', position: 'Química', department: 'Laboratório', ppeId: 5, ppeName: 'Máscara PFF2', issueDate: '2025-03-01', expiryDate: '2025-04-01', status: 'expired', signature: true },
 ];
 
-const employeeData: Employee[] = [
-  { id: 1, name: "João Silva", position: "Engenheiro de Segurança", department: "Engenharia", status: "Ativo" },
-  { id: 2, name: "Maria Oliveira", position: "Técnico de Segurança", department: "Operações", status: "Ativo" },
-  { id: 3, name: "Carlos Pereira", position: "Técnico de Segurança", department: "Operações", status: "Ativo" },
-  { id: 4, name: "Ana Ferreira", position: "Técnica", department: "Manutenção", status: "Ativo" },
-  { id: 5, name: "Marcos Lima", position: "Auxiliar", department: "Logística", status: "Ativo" },
-  { id: 6, name: "Juliana Costa", position: "Química", department: "Laboratório", status: "Ativo" }
-];
+
 
 function PPEManagement(): JSX.Element {
   const { toast } = useToast();
   const { formData, setField, resetForm, validateForm, errors, isValid } = usePPEForm();
+  const { employees, loading, error } = useEmployees();
   const [searchTerm, setSearchTerm] = useState('');
 
   const [currentTab, setCurrentTab] = useState('deliveries');
@@ -359,10 +354,10 @@ function PPEManagement(): JSX.Element {
 
     const newDelivery: PPEDelivery = {
       id: deliveries.length + 1,
-      employeeId: employeeData.find(emp => emp.name === formData.employeeName)?.id || 0,
+      employeeId: employees.find(emp => emp.name === formData.employeeName)?.id || 0,
       employeeName: formData.employeeName,
-      position: employeeData.find(emp => emp.name === formData.employeeName)?.position || '',
-      department: employeeData.find(emp => emp.name === formData.employeeName)?.department || '',
+      position: employees.find(emp => emp.name === formData.employeeName)?.position || '',
+      department: employees.find(emp => emp.name === formData.employeeName)?.department || '',
       ppeId: ppeData.find(ppe => ppe.name === formData.ppeName)?.id || 0,
       ppeName: formData.ppeName,
       issueDate: formData.issueDate,
@@ -500,7 +495,7 @@ function PPEManagement(): JSX.Element {
                         <SelectValue placeholder="Selecione o funcionário" />
                       </SelectTrigger>
                       <SelectContent>
-                        {employeeData.map((employee) => (
+                        {employees.map((employee) => (
                           <SelectItem key={employee.id} value={employee.name}>
                             {employee.name} - {employee.position}
                           </SelectItem>
