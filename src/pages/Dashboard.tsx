@@ -104,7 +104,7 @@ const Dashboard = () => {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-white">Dashboard de Segurança do Trabalho</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <LinkCard to="/documentos?filter=expiring" className="col-span-1">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">Documentos prestes a vencer</CardTitle>
@@ -141,20 +141,6 @@ const Dashboard = () => {
               <Calendar className="h-8 w-8 text-safety-blue/80" />
             </div>
             <span className="text-xs text-gray-500">{expiringTrainings} reciclagens este mês</span>
-          </CardContent>
-        </LinkCard>
-        
-        <LinkCard to="/acidentes" className="col-span-1">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Dias Sem Acidentes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold text-safety-green">45</div>
-              <TrendingUp className="h-8 w-8 text-safety-green/80" />
-            </div>
-            <span className="text-xs text-gray-500">Meta: 90 dias</span>
-            <Progress value={50} className="h-2 mt-2" />
           </CardContent>
         </LinkCard>
       </div>

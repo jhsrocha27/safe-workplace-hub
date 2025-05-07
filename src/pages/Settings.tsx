@@ -27,6 +27,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEmployees } from '@/hooks/use-employees';
 
 // Define employee interface to ensure type safety
 interface Employee {
@@ -41,6 +42,7 @@ interface Employee {
 
 const Settings = () => {
   const { companyInfo, setCompanyInfo } = useCompanyInfo();
+  const { employees, loading, error, addEmployee, updateEmployee, deleteEmployee } = useEmployees();
 
   const [notifications, setNotifications] = useState({
     email: true,
@@ -70,12 +72,7 @@ const Settings = () => {
 
   const [logLevel, setLogLevel] = useState("warning");
 
-  // State for employee management with the proper interface
-  const [employees, setEmployees] = useState<Employee[]>([
-    { id: 1, name: "João Silva", position: "Engenheiro de Segurança", department: "Engenharia", status: "Ativo" },
-    { id: 2, name: "Maria Oliveira", position: "Técnico de Segurança", department: "Operações", status: "Ativo" },
-    { id: 3, name: "Carlos Pereira", position: "Técnico de Segurança", department: "Operações", status: "Férias" }
-  ]);
+  // Employee data is now managed through useEmployees hook
   
   const [openEmployeeDialog, setOpenEmployeeDialog] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -147,40 +144,43 @@ const Settings = () => {
   };
 
   // Function to add or edit employee
-  const onEmployeeSubmit = (data: z.infer<typeof employeeFormSchema>) => {
-    if (isEditMode && currentEmployee) {
-      // Edit existing employee - ensure all required properties are included
-      const updatedEmployees = employees.map(emp => 
-        emp.id === currentEmployee.id ? { ...emp, ...data } : emp
-      );
-      setEmployees(updatedEmployees);
-      toast({
-        title: "Funcionário atualizado",
-        description: "Informações do funcionário atualizadas com sucesso.",
-      });
-    } else {
-      // Add new employee - ensure all required properties are included
-      const newEmployee: Employee = {
-        id: employees.length > 0 ? Math.max(...employees.map(e => e.id)) + 1 : 1,
+  const onEmployeeSubmit = async (data: z.infer<typeof employeeFormSchema>) => {
+    try {
+      const employeeData = {
         name: data.name,
-        email: data.email,
-        phone: data.phone,
         position: data.position,
         department: data.department,
         status: data.status
       };
-      setEmployees([...employees, newEmployee]);
+
+      if (isEditMode && currentEmployee) {
+        // Edit existing employee
+        await updateEmployee(currentEmployee.id, employeeData);
+        toast({
+          title: "Funcionário atualizado",
+          description: "Informações do funcionário atualizadas com sucesso.",
+        });
+      } else {
+        // Add new employee
+        await addEmployee(employeeData);
+        toast({
+          title: "Funcionário adicionado",
+          description: "Novo funcionário cadastrado com sucesso.",
+        });
+      }
+      
+      // Reset and close form
+      setOpenEmployeeDialog(false);
+      setIsEditMode(false);
+      setCurrentEmployee(null);
+      employeeForm.reset();
+    } catch (error) {
       toast({
-        title: "Funcionário adicionado",
-        description: "Novo funcionário cadastrado com sucesso.",
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro ao salvar funcionário",
+        variant: "destructive"
       });
     }
-    
-    // Reset and close form
-    setOpenEmployeeDialog(false);
-    setIsEditMode(false);
-    setCurrentEmployee(null);
-    employeeForm.reset();
   };
 
   // Function to open form for editing an employee
@@ -199,12 +199,20 @@ const Settings = () => {
   };
 
   // Function to delete an employee
-  const handleDeleteEmployee = (id: number) => {
-    setEmployees(employees.filter(emp => emp.id !== id));
-    toast({
-      title: "Funcionário removido",
-      description: "Funcionário removido com sucesso.",
-    });
+  const handleDeleteEmployee = async (id: number) => {
+    try {
+      await deleteEmployee(id);
+      toast({
+        title: "Funcionário removido",
+        description: "Funcionário removido com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro ao remover funcionário",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

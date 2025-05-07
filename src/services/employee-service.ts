@@ -1,42 +1,40 @@
 import { Employee } from './types';
-import { store } from './data-service';
+import { employeesService } from './supabase-service';
 
 export const employeeService = {
   async getAll(): Promise<Employee[]> {
-    return store.employees;
+    return employeesService.getAll();
   },
 
   async create(employee: Omit<Employee, 'id' | 'created_at'>): Promise<Employee> {
-    const newEmployee = {
-      ...employee,
-      id: store.employees.length > 0 ? Math.max(...store.employees.map(e => e.id)) + 1 : 1,
-      created_at: new Date().toISOString()
-    } as Employee;
-    
-    store.employees.push(newEmployee);
-    return newEmployee;
+    return employeesService.create(employee);
   },
 
   async update(id: number, employee: Partial<Employee>): Promise<Employee> {
-    const index = store.employees.findIndex(e => e.id === id);
-    if (index === -1) throw new Error('Employee not found');
-    
-    store.employees[index] = { ...store.employees[index], ...employee };
-    return store.employees[index];
+    return employeesService.update(id, employee);
   },
 
   async delete(id: number): Promise<void> {
-    const index = store.employees.findIndex(e => e.id === id);
-    if (index === -1) throw new Error('Employee not found');
-    
-    store.employees.splice(index, 1);
+    return employeesService.delete(id);
   },
 
   async getByDepartment(department: string): Promise<Employee[]> {
-    return store.employees.filter(e => e.department === department);
+    const query = await employeesService.query();
+    const { data, error } = await query
+      .select('*')
+      .eq('department', department);
+    
+    if (error) throw error;
+    return data;
   },
 
   async getByStatus(status: string): Promise<Employee[]> {
-    return store.employees.filter(e => e.status === status);
+    const query = await employeesService.query();
+    const { data, error } = await query
+      .select('*')
+      .eq('status', status);
+    
+    if (error) throw error;
+    return data;
   }
 };
