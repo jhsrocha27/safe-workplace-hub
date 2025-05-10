@@ -1,3 +1,4 @@
+
 export type Json =
   | string
   | number
@@ -27,6 +28,8 @@ export interface Database {
           name: string
           type: string
           ca_number: string
+          validity_period_months: number
+          description: string
           validity_date: string
           quantity: number
           created_at: string
