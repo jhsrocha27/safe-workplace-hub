@@ -67,6 +67,7 @@ import { PPERenewalDialog } from '@/components/ppe/PPERenewalDialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useQuery } from '@tanstack/react-query';
 import { ppeItemService } from '@/features/ppe/services/ppe-service';
+import { PPEItem } from '@/services/types'; // Add the import for PPEItem type
 
 function PPEManagement(): JSX.Element {
   // Usando o hook customizado para gestão de EPIs

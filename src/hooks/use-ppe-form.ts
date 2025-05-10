@@ -1,3 +1,4 @@
+
 import { useReducer } from 'react';
 
 // Função auxiliar para obter o período de validade do EPI
@@ -52,14 +53,14 @@ interface PPEFormState {
   validity_period: number;
   employeeName: string;
   ppeName: string;
-  issueDate: string;
+  delivery_date: string; // Changed from issueDate to delivery_date
   expiryDate: string;
   observations: string;
   isValid: boolean;
   errors: {
     employeeName?: string;
     ppeName?: string;
-    issueDate?: string;
+    delivery_date?: string; // Changed from issueDate to delivery_date
     expiryDate?: string;
     name?: string;
     ca?: string;
@@ -77,7 +78,7 @@ type PPEFormAction =
 const initialState: PPEFormState = {
   employeeName: '',
   ppeName: '',
-  issueDate: '',
+  delivery_date: '', // Changed from issueDate to delivery_date
   expiryDate: '',
   observations: '',
   description: '',
@@ -113,13 +114,13 @@ function formReducer(state: PPEFormState, action: PPEFormAction): PPEFormState {
         fieldErrors.ppeName = 'EPI é obrigatório';
       }
       
-      if (action.field === 'issueDate') {
+      if (action.field === 'delivery_date') { // Changed from issueDate to delivery_date
         if (!action.value.trim()) {
-          fieldErrors.issueDate = 'Data de entrega é obrigatória';
+          fieldErrors.delivery_date = 'Data de entrega é obrigatória';
         } else {
           const date = new Date(action.value);
           if (isNaN(date.getTime())) {
-            fieldErrors.issueDate = 'Data de entrega inválida';
+            fieldErrors.delivery_date = 'Data de entrega inválida';
           }
         }
       }
@@ -144,8 +145,8 @@ function formReducer(state: PPEFormState, action: PPEFormAction): PPEFormState {
         errors.ppeName = 'EPI é obrigatório';
       }
       
-      if (!state.issueDate.trim()) {
-        errors.issueDate = 'Data de entrega é obrigatória';
+      if (!state.delivery_date.trim()) { // Changed from issueDate to delivery_date
+        errors.delivery_date = 'Data de entrega é obrigatória';
       }
       
       return {
@@ -170,25 +171,25 @@ export function usePPEForm() {
     
     if (field === 'ppeName') {
       // Quando um EPI é selecionado, calcula a data de validade se houver uma data de entrega
-      if (state.issueDate) {
+      if (state.delivery_date) { // Changed from issueDate to delivery_date
         try {
           const validityPeriod = getValidityPeriod(value);
           if (validityPeriod > 0) {
-            const issueDate = new Date(state.issueDate);
+            const deliveryDate = new Date(state.delivery_date); // Changed from issueDate to delivery_date
             
             // Valida se a data de entrega é válida
-            if (isNaN(issueDate.getTime())) {
-              fieldErrors.issueDate = 'Data de entrega inválida';
+            if (isNaN(deliveryDate.getTime())) {
+              fieldErrors.delivery_date = 'Data de entrega inválida'; // Changed from issueDate to delivery_date
               fieldErrors.expiryDate = 'Não é possível calcular a data de validade';
             } else {
-              const expiryDate = new Date(issueDate);
+              const expiryDate = new Date(deliveryDate);
               expiryDate.setMonth(expiryDate.getMonth() + validityPeriod);
               
               // Garante que a data de validade seja válida
               if (isNaN(expiryDate.getTime())) {
                 fieldErrors.expiryDate = 'Erro ao calcular a data de validade';
                 console.error('Erro ao calcular data de validade:', {
-                  issueDate: state.issueDate,
+                  deliveryDate: state.delivery_date,
                   validityPeriod,
                   ppeName: value
                 });
@@ -206,11 +207,11 @@ export function usePPEForm() {
           fieldErrors.expiryDate = 'Erro ao calcular a data de validade';
         }
       }
-    } else if (field === 'issueDate') {
+    } else if (field === 'delivery_date') { // Changed from issueDate to delivery_date
       try {
         const date = new Date(value);
         if (isNaN(date.getTime())) {
-          fieldErrors.issueDate = 'Data de entrega inválida';
+          fieldErrors.delivery_date = 'Data de entrega inválida'; // Changed from issueDate to delivery_date
           fieldErrors.expiryDate = 'Não é possível calcular a data de validade';
         } else {
           formattedValue = date.toISOString().split('T')[0];
@@ -226,7 +227,7 @@ export function usePPEForm() {
               if (isNaN(expiryDate.getTime())) {
                 fieldErrors.expiryDate = 'Erro ao calcular a data de validade';
                 console.error('Erro ao calcular data de validade:', {
-                  issueDate: value,
+                  deliveryDate: value,
                   validityPeriod,
                   ppeName: state.ppeName
                 });
@@ -242,8 +243,8 @@ export function usePPEForm() {
         }
       } catch (error) {
         console.error('Erro ao processar data:', error);
-        fieldErrors.issueDate = 'Data de entrega inválida';
-        fieldErrors.expiryDate = 'N��o é possível calcular a data de validade';
+        fieldErrors.delivery_date = 'Data de entrega inválida'; // Changed from issueDate to delivery_date
+        fieldErrors.expiryDate = 'Não é possível calcular a data de validade';
       }
     }
     

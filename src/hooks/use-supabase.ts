@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useToast } from './use-toast';
 import { ppeItemService, ppeDeliveryService } from '@/features/ppe/services/ppe-service';
 import { Employee, PPEItem, PPEDelivery } from '@/services/types';
-import { employeesService } from '@/services/supabase-service';
+import { employeesService, supabase } from '@/services/supabase-service';
 
 export function useSupabase() {
   const { toast } = useToast();
@@ -213,8 +213,9 @@ export function useSupabase() {
     getByEmployee: async (employeeId: number) => {
       setLoading(true);
       try {
-        // Use the filtered query to get deliveries by employee
-        const { data, error } = await ppeDeliveryService.query()
+        // Using the direct supabase client instead of query()
+        const { data, error } = await supabase
+          .from('ppe_deliveries')
           .select('*')
           .eq('employee_id', employeeId);
           
