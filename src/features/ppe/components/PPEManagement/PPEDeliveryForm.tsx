@@ -89,14 +89,15 @@ export const PPEDeliveryForm: React.FC<PPEDeliveryFormProps> = ({ onSubmit, isLo
     }
 
     const deliveryData: Omit<PPEDelivery, 'id' | 'created_at'> = {
-      employeeId: selectedEmployeeId,
+      employee_id: selectedEmployeeId,
       employeeName: selectedEmployee?.name || '',
       position: selectedEmployee?.position || '',
       department: selectedEmployee?.department || '',
-      ppeId: selectedPPEId,
+      ppe_id: selectedPPEId,
       ppeName: selectedPPE?.name || '',
-      issueDate: deliveryDate,
+      delivery_date: deliveryDate,
       expiryDate: expiryDate,
+      quantity: 1,
       status: status,
       signature: false
     };

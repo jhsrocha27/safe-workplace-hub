@@ -19,34 +19,36 @@ const convertFromPPEItem = (ppe: Omit<PPEItem, 'id' | 'created_at'>) => ({
   type: ppe.type,
   validity_period_months: ppe.validityPeriod,
   description: ppe.description || '',
+  validity_date: new Date(Date.now() + ppe.validityPeriod * 30 * 24 * 60 * 60 * 1000).toISOString(),
   quantity: 0
 });
 
 const convertToPPEDelivery = (delivery: any): PPEDelivery => ({
   id: delivery.id,
-  employeeId: delivery.employee_id,
+  employee_id: delivery.employee_id,
   employeeName: delivery.employeeName,
   position: delivery.position,
   department: delivery.department,
-  ppeId: delivery.ppe_id,
+  ppe_id: delivery.ppe_id,
   ppeName: delivery.ppeName,
-  issueDate: delivery.delivery_date,
+  delivery_date: delivery.delivery_date,
   expiryDate: delivery.expiryDate,
+  quantity: delivery.quantity || 1,
   status: delivery.status,
   signature: delivery.signature,
   created_at: delivery.created_at
 });
 
 const convertFromPPEDelivery = (delivery: Omit<PPEDelivery, 'id' | 'created_at'>) => ({
-  employee_id: delivery.employeeId,
-  ppe_id: delivery.ppeId,
+  employee_id: delivery.employee_id,
+  ppe_id: delivery.ppe_id,
   employeeName: delivery.employeeName,
   ppeName: delivery.ppeName,
   department: delivery.department,
   position: delivery.position,
-  delivery_date: delivery.issueDate,
+  delivery_date: delivery.delivery_date,
   expiryDate: delivery.expiryDate,
-  quantity: 1,
+  quantity: delivery.quantity || 1,
   status: delivery.status,
   signature: delivery.signature || false
 });
@@ -90,7 +92,10 @@ export const ppeItemService = {
       if (ppeItem.name) updateData.name = ppeItem.name;
       if (ppeItem.ca) updateData.ca_number = ppeItem.ca;
       if (ppeItem.type) updateData.type = ppeItem.type;
-      if (ppeItem.validityPeriod) updateData.validity_period_months = ppeItem.validityPeriod;
+      if (ppeItem.validityPeriod) {
+        updateData.validity_period_months = ppeItem.validityPeriod;
+        updateData.validity_date = new Date(Date.now() + ppeItem.validityPeriod * 30 * 24 * 60 * 60 * 1000).toISOString();
+      }
       if (ppeItem.description !== undefined) updateData.description = ppeItem.description;
       
       const response = await ppesService.update(id, updateData);
@@ -147,13 +152,13 @@ export const ppeDeliveryService = {
   async update(id: number, delivery: Partial<PPEDelivery>): Promise<PPEDelivery> {
     try {
       const updateData: any = {};
-      if (delivery.employeeId) updateData.employee_id = delivery.employeeId;
+      if (delivery.employee_id) updateData.employee_id = delivery.employee_id;
       if (delivery.employeeName) updateData.employeeName = delivery.employeeName;
       if (delivery.position) updateData.position = delivery.position;
       if (delivery.department) updateData.department = delivery.department;
-      if (delivery.ppeId) updateData.ppe_id = delivery.ppeId;
+      if (delivery.ppe_id) updateData.ppe_id = delivery.ppe_id;
       if (delivery.ppeName) updateData.ppeName = delivery.ppeName;
-      if (delivery.issueDate) updateData.delivery_date = delivery.issueDate;
+      if (delivery.delivery_date) updateData.delivery_date = delivery.delivery_date;
       if (delivery.expiryDate) updateData.expiryDate = delivery.expiryDate;
       if (delivery.status) updateData.status = delivery.status;
       if (delivery.signature !== undefined) updateData.signature = delivery.signature;

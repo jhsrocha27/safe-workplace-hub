@@ -1,3 +1,4 @@
+
 // Definição dos tipos base para o sistema
 
 export interface Employee {
