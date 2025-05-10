@@ -1,5 +1,4 @@
 
-
 -- Criação das tabelas no Supabase (versão atualizada)
 
 -- Tabela de Funcionários
@@ -20,6 +19,7 @@ CREATE TABLE IF NOT EXISTS ppes (
   ca_number TEXT NOT NULL,
   validity_period_months INTEGER NOT NULL,
   description TEXT,
+  validity_date TIMESTAMP WITH TIME ZONE,
   quantity INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
@@ -73,4 +73,3 @@ CREATE TRIGGER ppe_deliveries_status_trigger
   BEFORE INSERT OR UPDATE OF expiryDate ON ppe_deliveries
   FOR EACH ROW
   EXECUTE FUNCTION update_ppe_status();
-
