@@ -621,13 +621,23 @@ function PPEManagement(): JSX.Element {
       <PPEDetailDialog
         open={ppeManagement.detailDialogOpen}
         onOpenChange={ppeManagement.setDetailDialogOpen}
-        delivery={ppeManagement.selectedDelivery}
+        delivery={{
+          ...ppeManagement.selectedDelivery,
+          employeeId: ppeManagement.selectedDelivery?.employee_id,
+          ppeId: ppeManagement.selectedDelivery?.ppe_id,
+          issueDate: ppeManagement.selectedDelivery?.delivery_date
+        }}
       />
 
       <PPERenewalDialog
         open={ppeManagement.renewalDialogOpen}
         onOpenChange={ppeManagement.setRenewalDialogOpen}
-        delivery={ppeManagement.selectedDelivery}
+        delivery={{
+          ...ppeManagement.selectedDelivery,
+          employeeId: ppeManagement.selectedDelivery?.employee_id,
+          ppeId: ppeManagement.selectedDelivery?.ppe_id,
+          issueDate: ppeManagement.selectedDelivery?.delivery_date
+        }}
       />
 
       <AlertDialog open={ppeManagement.deleteDialogOpen} onOpenChange={ppeManagement.setDeleteDialogOpen}>

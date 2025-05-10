@@ -1,4 +1,3 @@
-
 // Definição dos tipos base para o sistema
 
 export interface Employee {
@@ -44,6 +43,11 @@ export interface PPEDelivery {
   status: 'valid' | 'expired' | 'expiring';
   signature: boolean;
   created_at?: string;
+  
+  // Additional properties needed for component compatibility
+  employeeId?: number;
+  ppeId?: number;
+  issueDate?: string;
 }
 
 export interface Accident {
