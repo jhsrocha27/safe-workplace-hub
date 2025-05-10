@@ -1,4 +1,5 @@
 
+
 -- Criação das tabelas no Supabase (versão atualizada)
 
 -- Tabela de Funcionários
@@ -72,3 +73,4 @@ CREATE TRIGGER ppe_deliveries_status_trigger
   BEFORE INSERT OR UPDATE OF expiryDate ON ppe_deliveries
   FOR EACH ROW
   EXECUTE FUNCTION update_ppe_status();
+

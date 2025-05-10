@@ -1,4 +1,3 @@
-
 import { ppesService, ppeDeliveriesService } from '@/services/supabase-service';
 import type { PPEItem, PPEDelivery } from '@/services/types';
 
@@ -19,7 +18,6 @@ const convertFromPPEItem = (ppe: Omit<PPEItem, 'id' | 'created_at'>) => ({
   type: ppe.type,
   validity_period_months: ppe.validityPeriod,
   description: ppe.description || '',
-  validity_date: new Date(Date.now() + ppe.validityPeriod * 30 * 24 * 60 * 60 * 1000).toISOString(),
   quantity: 0
 });
 

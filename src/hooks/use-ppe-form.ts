@@ -1,4 +1,3 @@
-
 import { useReducer } from 'react';
 
 // Função auxiliar para obter o período de validade do EPI
@@ -53,14 +52,14 @@ interface PPEFormState {
   validity_period: number;
   employeeName: string;
   ppeName: string;
-  delivery_date: string; // This should be delivery_date, not issueDate
+  delivery_date: string;
   expiryDate: string;
   observations: string;
   isValid: boolean;
   errors: {
     employeeName?: string;
     ppeName?: string;
-    delivery_date?: string; // This should match the property name above
+    delivery_date?: string;
     expiryDate?: string;
     name?: string;
     ca?: string;
@@ -78,7 +77,7 @@ type PPEFormAction =
 const initialState: PPEFormState = {
   employeeName: '',
   ppeName: '',
-  delivery_date: '', // Changed from issueDate to delivery_date
+  delivery_date: '',
   expiryDate: '',
   observations: '',
   description: '',

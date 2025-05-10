@@ -799,7 +799,7 @@ function PPEManagement(): JSX.Element {
                       ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={5} className="px-6 py-12 text-center text-gray-500">
                         Nenhuma entrega encontrada para este EPI
                       </TableCell>
                     </TableRow>

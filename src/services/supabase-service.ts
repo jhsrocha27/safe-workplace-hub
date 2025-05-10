@@ -1,3 +1,4 @@
+
 import { supabase as supabaseClient, TABLES, type Tables } from '../config/supabase';
 import type { Database } from '../config/database.types';
 
