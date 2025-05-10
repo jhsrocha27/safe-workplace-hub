@@ -1,7 +1,9 @@
+
 import { useState } from 'react';
 import { useToast } from './use-toast';
-import { employeeService, ppeItemService, ppeDeliveryService } from '@/services/ppe-service';
+import { ppeItemService, ppeDeliveryService } from '@/features/ppe/services/ppe-service';
 import { Employee, PPEItem, PPEDelivery } from '@/services/types';
+import { employeesService } from '@/services/supabase-service';
 
 export function useSupabase() {
   const { toast } = useToast();
@@ -21,7 +23,7 @@ export function useSupabase() {
     getAll: async () => {
       setLoading(true);
       try {
-        const data = await employeeService.getAll();
+        const data = await employeesService.getAll();
         return data;
       } catch (err) {
         handleError(err as Error);
@@ -34,7 +36,7 @@ export function useSupabase() {
     create: async (employee: Omit<Employee, 'id' | 'created_at'>) => {
       setLoading(true);
       try {
-        const data = await employeeService.create(employee);
+        const data = await employeesService.create(employee);
         toast({
           title: 'Sucesso',
           description: 'Funcionário cadastrado com sucesso',
@@ -51,7 +53,7 @@ export function useSupabase() {
     update: async (id: number, employee: Partial<Employee>) => {
       setLoading(true);
       try {
-        const data = await employeeService.update(id, employee);
+        const data = await employeesService.update(id, employee);
         toast({
           title: 'Sucesso',
           description: 'Funcionário atualizado com sucesso',
@@ -68,7 +70,7 @@ export function useSupabase() {
     delete: async (id: number) => {
       setLoading(true);
       try {
-        await employeeService.delete(id);
+        await employeesService.delete(id);
         toast({
           title: 'Sucesso',
           description: 'Funcionário excluído com sucesso',
@@ -211,8 +213,13 @@ export function useSupabase() {
     getByEmployee: async (employeeId: number) => {
       setLoading(true);
       try {
-        const data = await ppeDeliveryService.getByEmployee(employeeId);
-        return data;
+        // Use the filtered query to get deliveries by employee
+        const { data, error } = await ppeDeliveryService.query()
+          .select('*')
+          .eq('employee_id', employeeId);
+          
+        if (error) throw error;
+        return data ? data.map(convertToPPEDelivery) : [];
       } catch (err) {
         handleError(err as Error);
         return [];
@@ -221,6 +228,23 @@ export function useSupabase() {
       }
     },
   };
+  
+  // Helper function for converting from DB format to our app format
+  const convertToPPEDelivery = (delivery: any): PPEDelivery => ({
+    id: delivery.id,
+    employee_id: delivery.employee_id,
+    employeeName: delivery.employeeName,
+    position: delivery.position,
+    department: delivery.department,
+    ppe_id: delivery.ppe_id,
+    ppeName: delivery.ppeName,
+    delivery_date: delivery.delivery_date,
+    expiryDate: delivery.expiryDate,
+    quantity: delivery.quantity || 1,
+    status: delivery.status,
+    signature: delivery.signature,
+    created_at: delivery.created_at
+  });
 
   return {
     loading,

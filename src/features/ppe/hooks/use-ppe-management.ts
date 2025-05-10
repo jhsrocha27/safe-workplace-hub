@@ -153,15 +153,15 @@ export function usePPEManagement() {
 
   // Filtragem de dados
   const filteredDeliveries = deliveries.filter(delivery => {
-    return delivery.employeeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    return (delivery.employeeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       delivery.ppeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      delivery.department?.toLowerCase().includes(searchTerm.toLowerCase());
+      delivery.department?.toLowerCase().includes(searchTerm.toLowerCase())) ?? false;
   });
 
   const filteredItems = ppeItems.filter(item => {
-    return item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    return (item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.ca?.toLowerCase().includes(searchTerm.toLowerCase());
+      item.ca?.toLowerCase().includes(searchTerm.toLowerCase())) ?? false;
   });
 
   // Handlers

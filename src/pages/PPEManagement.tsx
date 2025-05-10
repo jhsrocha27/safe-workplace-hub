@@ -1,8 +1,10 @@
+
 import { useState } from 'react';
 import { calculatePPEStatus, formatExpiryDate } from '@/utils/ppe-status';
 import { useToast } from "@/hooks/use-toast";
 import { usePPEForm } from '@/hooks/use-ppe-form';
 import { useEmployees } from '@/hooks/use-employees';
+import { usePPEManagement } from '@/features/ppe/hooks/use-ppe-management';
 import {
   Card,
   CardContent,
@@ -29,7 +31,8 @@ import {
   Trash2,
   FileSpreadsheet,
   Edit,
-  History
+  History,
+  Loader2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -62,218 +65,16 @@ import {
 import { PPEDetailDialog } from '@/components/ppe/PPEDetailDialog';
 import { PPERenewalDialog } from '@/components/ppe/PPERenewalDialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-
-interface PPEItem {
-  id: number;
-  name: string;
-  ca: string;
-  type: string;
-  validityPeriod: number;
-  description: string;
-}
-
-interface PPEDelivery {
-  id: number;
-  employeeId: number;
-  employeeName: string;
-  position: string;
-  department: string;
-  ppeId: number;
-  ppeName: string;
-  issueDate: string;
-  expiryDate: string;
-  status: 'valid' | 'expired' | 'expiring';
-  signature: boolean;
-}
-
-interface Employee {
-  id: number;
-  name: string;
-  position: string;
-  department: string;
-  status: string;
-}
-
-const ppeData: PPEItem[] = [
-  { id: 1, name: 'Capacete de Segurança', ca: 'CA-12345', type: 'Proteção para cabeça', validityPeriod: 12, description: 'Capacete classe B, tipo II' },
-  { id: 2, name: 'Protetor Auricular', ca: 'CA-23456', type: 'Proteção auditiva', validityPeriod: 6, description: 'Tipo plug, atenuação 15 dB' },
-  { id: 3, name: 'Óculos de Proteção', ca: 'CA-34567', type: 'Proteção visual', validityPeriod: 6, description: 'Lente incolor, anti-embaçante' },
-  { id: 4, name: 'Luvas de Segurança', ca: 'CA-45678', type: 'Proteção para mãos', validityPeriod: 3, description: 'Resistente a cortes e abrasão' },
-  { id: 5, name: 'Máscara PFF2', ca: 'CA-56789', type: 'Proteção respiratória', validityPeriod: 1, description: 'Filtragem de partículas' }
-];
-
-const ppeDeliveryData: PPEDelivery[] = [
-  { id: 1, employeeId: 101, employeeName: 'Carlos Santos', position: 'Operador', department: 'Produção', ppeId: 1, ppeName: 'Capacete de Segurança', issueDate: '2025-01-15', expiryDate: '2026-01-15', status: 'valid', signature: false },
-  { id: 2, employeeId: 101, employeeName: 'Carlos Santos', position: 'Operador', department: 'Produção', ppeId: 2, ppeName: 'Protetor Auricular', issueDate: '2025-01-15', expiryDate: '2025-07-15', status: 'expiring', signature: false },
-  { id: 3, employeeId: 102, employeeName: 'Ana Ferreira', position: 'Técnica', department: 'Manutenção', ppeId: 3, ppeName: 'Óculos de Proteção', issueDate: '2024-12-10', expiryDate: '2025-06-10', status: 'valid', signature: true },
-  { id: 4, employeeId: 103, employeeName: 'Marcos Lima', position: 'Auxiliar', department: 'Logística', ppeId: 4, ppeName: 'Luvas de Segurança', issueDate: '2025-02-05', expiryDate: '2025-05-05', status: 'expiring', signature: false },
-  { id: 5, employeeId: 104, employeeName: 'Juliana Costa', position: 'Química', department: 'Laboratório', ppeId: 5, ppeName: 'Máscara PFF2', issueDate: '2025-03-01', expiryDate: '2025-04-01', status: 'expired', signature: true },
-];
-
-
+import { useQuery } from '@tanstack/react-query';
+import { ppeItemService } from '@/features/ppe/services/ppe-service';
 
 function PPEManagement(): JSX.Element {
+  // Usando o hook customizado para gestão de EPIs
+  const ppeManagement = usePPEManagement();
+  const { employees } = useEmployees();
   const { toast } = useToast();
-  const { formData, setField, resetForm, validateForm, errors, isValid } = usePPEForm();
-  const { employees, loading, error } = useEmployees();
-  const [searchTerm, setSearchTerm] = useState('');
 
-  const [currentTab, setCurrentTab] = useState('deliveries');
-  const [selectedDelivery, setSelectedDelivery] = useState<PPEDelivery | null>(null);
-  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-  const [renewalDialogOpen, setRenewalDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [isNewPPEDialogOpen, setIsNewPPEDialogOpen] = useState(false);
-  const [isDeliveryDialogOpen, setIsDeliveryDialogOpen] = useState(false);
-  const [deliveries, setDeliveries] = useState<PPEDelivery[]>(ppeDeliveryData);
-  const [ppeItems, setPPEItems] = useState<PPEItem[]>(ppeData);
-  
-  const [selectedPPEItem, setSelectedPPEItem] = useState<PPEItem | null>(null);
-  const [isEditPPEDialogOpen, setIsEditPPEDialogOpen] = useState(false);
-  const [isPPEHistoryDialogOpen, setIsPPEHistoryDialogOpen] = useState(false);
-  const [isDeletePPEDialogOpen, setIsDeletePPEDialogOpen] = useState(false);
-
-  const filteredDeliveries = deliveries.filter(delivery => {
-    return delivery.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      delivery.ppeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      delivery.department.toLowerCase().includes(searchTerm.toLowerCase());
-  });
-
-  const filteredItems = ppeItems.filter(item => {
-    return item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.ca.toLowerCase().includes(searchTerm.toLowerCase());
-  });
-
-  const handleSavePPE = () => {
-    const nameInput = document.querySelector('input[placeholder="Ex: Capacete de Segurança"]') as HTMLInputElement;
-    const caInput = document.querySelector('input[placeholder="Ex: CA-12345"]') as HTMLInputElement;
-    const typeInput = document.querySelector('input[placeholder="Ex: Proteção para cabeça"]') as HTMLInputElement;
-    const validityInput = document.querySelector('input[placeholder="Ex: 12"]') as HTMLInputElement;
-    const descriptionInput = document.querySelector('input[placeholder="Detalhes adicionais sobre o EPI"]') as HTMLInputElement;
-
-    if (!nameInput?.value || !caInput?.value || !typeInput?.value || !validityInput?.value) {
-      toast({
-        title: "Erro ao salvar",
-        description: "Por favor, preencha todos os campos obrigatórios.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const newPPE: PPEItem = {
-      id: ppeItems.length + 1,
-      name: nameInput.value,
-      ca: caInput.value,
-      type: typeInput.value,
-      validityPeriod: parseInt(validityInput.value),
-      description: descriptionInput?.value || ''
-    };
-
-    const updatedPPEItems = [...ppeItems, newPPE];
-    setPPEItems(updatedPPEItems);
-
-    toast({
-      title: "EPI cadastrado",
-      description: `O EPI ${newPPE.name} foi cadastrado com sucesso no catálogo.`
-    });
-
-    setIsNewPPEDialogOpen(false);
-  };
-
-  const handleShowDetails = (delivery: PPEDelivery) => {
-    setSelectedDelivery(delivery);
-    setDetailDialogOpen(true);
-  };
-
-  const handleRenewPPE = (delivery: PPEDelivery) => {
-    setSelectedDelivery(delivery);
-    setRenewalDialogOpen(true);
-  };
-
-  const handleDeletePPE = (delivery: PPEDelivery) => {
-    setSelectedDelivery(delivery);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleEditPPE = (item: PPEItem) => {
-    setSelectedPPEItem(item);
-    setIsEditPPEDialogOpen(true);
-  };
-
-  const handleViewPPEHistory = (item: PPEItem) => {
-    setSelectedPPEItem(item);
-    setIsPPEHistoryDialogOpen(true);
-  };
-
-  const handleConfirmDeletePPE = (item: PPEItem) => {
-    setSelectedPPEItem(item);
-    setIsDeletePPEDialogOpen(true);
-  };
-
-  const confirmDeletePPEItem = () => {
-    if (selectedPPEItem) {
-      setPPEItems(prev => prev.filter(p => p.id !== selectedPPEItem.id));
-      
-      setDeliveries(prev => prev.filter(d => d.ppeId !== selectedPPEItem.id));
-      
-      toast({
-        title: "EPI excluído",
-        description: `O EPI ${selectedPPEItem.name} foi excluído com sucesso.`
-      });
-      
-      setIsDeletePPEDialogOpen(false);
-    }
-  };
-
-  const handleUpdatePPE = () => {
-    if (!selectedPPEItem) return;
-    
-    const nameInput = document.querySelector('input[name="edit-ppe-name"]') as HTMLInputElement;
-    const caInput = document.querySelector('input[name="edit-ppe-ca"]') as HTMLInputElement;
-    const typeInput = document.querySelector('input[name="edit-ppe-type"]') as HTMLInputElement;
-    const validityInput = document.querySelector('input[name="edit-ppe-validity"]') as HTMLInputElement;
-    const descriptionInput = document.querySelector('input[name="edit-ppe-description"]') as HTMLInputElement;
-
-    if (!nameInput?.value || !caInput?.value || !typeInput?.value || !validityInput?.value) {
-      toast({
-        title: "Erro ao atualizar",
-        description: "Por favor, preencha todos os campos obrigatórios.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const updatedPPEItem: PPEItem = {
-      ...selectedPPEItem,
-      name: nameInput.value,
-      ca: caInput.value,
-      type: typeInput.value,
-      validityPeriod: parseInt(validityInput.value),
-      description: descriptionInput?.value || ''
-    };
-
-    setPPEItems(prev => prev.map(item => 
-      item.id === selectedPPEItem.id ? updatedPPEItem : item
-    ));
-
-    if (updatedPPEItem.name !== selectedPPEItem.name) {
-      setDeliveries(prev => prev.map(d => 
-        d.ppeId === selectedPPEItem.id 
-          ? { ...d, ppeName: updatedPPEItem.name }
-          : d
-      ));
-    }
-
-    toast({
-      title: "EPI atualizado",
-      description: `O EPI ${updatedPPEItem.name} foi atualizado com sucesso.`
-    });
-
-    setIsEditPPEDialogOpen(false);
-  };
-
-  const handleDownloadReceipt = (delivery: PPEDelivery) => {
+  const handleDownloadReceipt = (delivery: any) => {
     const content = `
       COMPROVANTE DE ENTREGA DE EPI
       
@@ -282,8 +83,8 @@ function PPEManagement(): JSX.Element {
       Departamento: ${delivery.department}
       
       EPI: ${delivery.ppeName}
-      Data de Entrega: ${delivery.issueDate}
-      Data de Validade: ${delivery.expiryDate}
+      Data de Entrega: ${new Date(delivery.delivery_date).toLocaleDateString()}
+      Data de Validade: ${new Date(delivery.expiryDate).toLocaleDateString()}
       
       Status: ${delivery.status}
     `;
@@ -304,90 +105,14 @@ function PPEManagement(): JSX.Element {
     });
   };
 
-  const confirmDeletePPE = () => {
-    if (selectedDelivery) {
-      setDeliveries(prev => prev.filter(d => d.id !== selectedDelivery.id));
-      toast({
-        title: "EPI excluído",
-        description: `O registro de entrega de ${selectedDelivery.ppeName} para ${selectedDelivery.employeeName} foi excluído`
-      });
-      setDeleteDialogOpen(false);
-    }
-  };
-
-  const updateLocalStorage = (key: string, data: any) => {
-    try {
-      localStorage.setItem(key, JSON.stringify(data));
-      return true;
-    } catch (error) {
-      console.error(`Erro ao salvar no localStorage: ${error}`);
-      return false;
-    }
-  };
-
-  const handleSaveDelivery = () => {
-    if (!formData.employeeName || !formData.ppeName || !formData.issueDate) {
-      toast({
-        title: "Erro ao salvar",
-        description: "Por favor, preencha todos os campos obrigatórios.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Encontra o EPI selecionado para obter o período de validade
-    const selectedPPE = ppeData.find(ppe => ppe.name === formData.ppeName);
-    if (!selectedPPE) {
-      toast({
-        title: "Erro ao salvar",
-        description: "EPI não encontrado.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Calcula a data de vencimento baseada na data de entrega e período de validade do EPI
-    const issueDate = new Date(formData.issueDate);
-    const expiryDate = new Date(issueDate);
-    expiryDate.setMonth(expiryDate.getMonth() + selectedPPE.validityPeriod);
-    const expiryDateStr = expiryDate.toISOString().split('T')[0];
-
-    const newDelivery: PPEDelivery = {
-      id: deliveries.length + 1,
-      employeeId: employees.find(emp => emp.name === formData.employeeName)?.id || 0,
-      employeeName: formData.employeeName,
-      position: employees.find(emp => emp.name === formData.employeeName)?.position || '',
-      department: employees.find(emp => emp.name === formData.employeeName)?.department || '',
-      ppeId: ppeData.find(ppe => ppe.name === formData.ppeName)?.id || 0,
-      ppeName: formData.ppeName,
-      issueDate: formData.issueDate,
-      expiryDate: expiryDateStr,
-      status: calculatePPEStatus(formData.issueDate, selectedPPE.validityPeriod).status,
-      signature: false
-    };
-
-    const updatedDeliveries = [...deliveries, newDelivery];
-    setDeliveries(updatedDeliveries);
-
-    updateLocalStorage('ppeDeliveries', updatedDeliveries);
-    
-    toast({
-      title: "Entrega registrada",
-      description: `A entrega de ${formData.ppeName} para ${formData.employeeName} foi registrada com sucesso.`
-    });
-
-    resetForm();
-    setIsDeliveryDialogOpen(false);
-  };
-
   const handleDownloadDeliveryTable = () => {
     const headers = ['Funcionário', 'Departamento', 'EPI', 'Data Entrega', 'Data Validade', 'Status'];
     
-    const rows = filteredDeliveries.map(delivery => [
+    const rows = ppeManagement.filteredDeliveries.map(delivery => [
       delivery.employeeName,
       delivery.department,
       delivery.ppeName,
-      new Date(delivery.issueDate).toLocaleDateString('pt-BR'),
+      new Date(delivery.delivery_date).toLocaleDateString('pt-BR'),
       new Date(delivery.expiryDate).toLocaleDateString('pt-BR'),
       delivery.status === 'valid' ? 'Válido' : 
         delivery.status === 'expiring' ? 'A vencer' : 'Vencido'
@@ -419,7 +144,7 @@ function PPEManagement(): JSX.Element {
         <h1 className="text-2xl font-bold text-white">Gestão de EPIs</h1>
 
         <div className="flex gap-3">
-          <Dialog open={isNewPPEDialogOpen} onOpenChange={setIsNewPPEDialogOpen}>
+          <Dialog open={ppeManagement.isNewPPEDialogOpen} onOpenChange={ppeManagement.setIsNewPPEDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline">
                 <Shield className="mr-2 h-4 w-4" /> Cadastrar EPI
@@ -436,23 +161,44 @@ function PPEManagement(): JSX.Element {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
                     <label className="block text-sm font-medium mb-1">Nome do EPI</label>
-                    <Input placeholder="Ex: Capacete de Segurança" />
+                    <Input 
+                      placeholder="Ex: Capacete de Segurança" 
+                      value={ppeManagement.formData.name}
+                      onChange={(e) => ppeManagement.setField('name', e.target.value)}
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Número do CA</label>
-                    <Input placeholder="Ex: CA-12345" />
+                    <Input 
+                      placeholder="Ex: CA-12345" 
+                      value={ppeManagement.formData.ca}
+                      onChange={(e) => ppeManagement.setField('ca', e.target.value)}
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Tipo de Proteção</label>
-                    <Input placeholder="Ex: Proteção para cabeça" />
+                    <Input 
+                      placeholder="Ex: Proteção para cabeça" 
+                      value={ppeManagement.formData.type}
+                      onChange={(e) => ppeManagement.setField('type', e.target.value)}
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Validade (meses)</label>
-                    <Input type="number" placeholder="Ex: 12" />
+                    <Input 
+                      type="number" 
+                      placeholder="Ex: 12" 
+                      value={ppeManagement.formData.validity_period?.toString() || ''}
+                      onChange={(e) => ppeManagement.setField('validity_period', e.target.value)}
+                    />
                   </div>
                   <div className="col-span-2">
                     <label className="block text-sm font-medium mb-1">Descrição</label>
-                    <Input placeholder="Detalhes adicionais sobre o EPI" />
+                    <Input 
+                      placeholder="Detalhes adicionais sobre o EPI" 
+                      value={ppeManagement.formData.description}
+                      onChange={(e) => ppeManagement.setField('description', e.target.value)}
+                    />
                   </div>
                 </div>
               </div>
@@ -462,15 +208,20 @@ function PPEManagement(): JSX.Element {
                 </DialogClose>
                 <Button 
                   className="bg-safety-blue hover:bg-safety-blue/90"
-                  onClick={handleSavePPE}
+                  onClick={ppeManagement.handleSavePPE}
+                  disabled={ppeManagement.loading}
                 >
-                  Salvar
+                  {ppeManagement.loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando
+                    </>
+                  ) : 'Salvar'}
                 </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
 
-          <Dialog open={isDeliveryDialogOpen} onOpenChange={setIsDeliveryDialogOpen}>
+          <Dialog open={ppeManagement.isDeliveryDialogOpen} onOpenChange={ppeManagement.setIsDeliveryDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" /> Nova Entrega
@@ -488,8 +239,8 @@ function PPEManagement(): JSX.Element {
                   <div className="col-span-2">
                     <label className="block text-sm font-medium mb-1">Funcionário</label>
                     <Select
-                      value={formData.employeeName}
-                      onValueChange={(value) => setField('employeeName', value)}
+                      value={ppeManagement.formData.employeeName}
+                      onValueChange={(value) => ppeManagement.setField('employeeName', value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o funcionário" />
@@ -506,14 +257,14 @@ function PPEManagement(): JSX.Element {
                   <div className="col-span-2">
                     <label className="block text-sm font-medium mb-1">EPI</label>
                     <Select
-                      value={formData.ppeName}
-                      onValueChange={(value) => setField('ppeName', value)}
+                      value={ppeManagement.formData.ppeName}
+                      onValueChange={(value) => ppeManagement.setField('ppeName', value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o EPI" />
                       </SelectTrigger>
                       <SelectContent>
-                        {ppeData.map((ppe) => (
+                        {ppeManagement.ppeItems.map((ppe) => (
                           <SelectItem key={ppe.id} value={ppe.name}>
                             {ppe.name} - {ppe.ca} (Validade: {ppe.validityPeriod} meses)
                           </SelectItem>
@@ -525,12 +276,15 @@ function PPEManagement(): JSX.Element {
                     <label className="block text-sm font-medium mb-1">Data de Entrega</label>
                     <Input 
                       type="date"
-                      value={formData.issueDate}
-                      onChange={(e) => setField('issueDate', e.target.value)}
+                      value={ppeManagement.formData.delivery_date}
+                      onChange={(e) => ppeManagement.setField('delivery_date', e.target.value)}
                     />
-                    {formData.ppeName && formData.issueDate && (
+                    {ppeManagement.formData.ppeName && ppeManagement.formData.delivery_date && (
                       <p className="text-sm text-gray-500 mt-1">
-                        Data de vencimento calculada: {formatExpiryDate(formData.issueDate, ppeData.find(ppe => ppe.name === formData.ppeName)?.validityPeriod || 0)}
+                        Data de vencimento calculada: {formatExpiryDate(
+                          ppeManagement.formData.delivery_date, 
+                          ppeManagement.ppeItems.find(ppe => ppe.name === ppeManagement.formData.ppeName)?.validityPeriod || 0
+                        )}
                       </p>
                     )}
                   </div>
@@ -538,8 +292,8 @@ function PPEManagement(): JSX.Element {
                     <label className="block text-sm font-medium mb-1">Observações</label>
                     <Input 
                       placeholder="Informações adicionais"
-                      value={formData.observations}
-                      onChange={(e) => setField('observations', e.target.value)}
+                      value={ppeManagement.formData.observations}
+                      onChange={(e) => ppeManagement.setField('observations', e.target.value)}
                     />
                   </div>
                 </div>
@@ -550,9 +304,57 @@ function PPEManagement(): JSX.Element {
                 </DialogClose>
                 <Button 
                   className="bg-safety-blue hover:bg-safety-blue/90"
-                  onClick={handleSaveDelivery}
+                  onClick={() => {
+                    // Encontre o funcionário selecionado
+                    const selectedEmployee = employees.find(emp => emp.name === ppeManagement.formData.employeeName);
+                    // Encontre o EPI selecionado
+                    const selectedPPE = ppeManagement.ppeItems.find(ppe => ppe.name === ppeManagement.formData.ppeName);
+                    
+                    if (!selectedEmployee || !selectedPPE || !ppeManagement.formData.delivery_date) {
+                      toast({
+                        title: "Erro ao salvar",
+                        description: "Por favor, preencha todos os campos obrigatórios.",
+                        variant: "destructive"
+                      });
+                      return;
+                    }
+
+                    // Calcule a data de vencimento baseada no período de validade do EPI
+                    const issueDate = new Date(ppeManagement.formData.delivery_date);
+                    const expiryDate = new Date(issueDate);
+                    expiryDate.setMonth(expiryDate.getMonth() + selectedPPE.validityPeriod);
+                    const expiryDateStr = expiryDate.toISOString().split('T')[0];
+
+                    // Calcule o status
+                    const status = calculatePPEStatus(
+                      ppeManagement.formData.delivery_date, 
+                      selectedPPE.validityPeriod
+                    ).status;
+
+                    // Prepare os dados da entrega
+                    const deliveryData = {
+                      employee_id: selectedEmployee.id,
+                      employeeName: selectedEmployee.name,
+                      position: selectedEmployee.position,
+                      department: selectedEmployee.department,
+                      ppe_id: selectedPPE.id,
+                      ppeName: selectedPPE.name,
+                      delivery_date: ppeManagement.formData.delivery_date,
+                      expiryDate: expiryDateStr,
+                      quantity: 1,
+                      status,
+                      signature: false
+                    };
+
+                    ppeManagement.handleSaveDelivery(deliveryData);
+                  }}
+                  disabled={ppeManagement.loading}
                 >
-                  Salvar
+                  {ppeManagement.loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando
+                    </>
+                  ) : 'Salvar'}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -575,8 +377,8 @@ function PPEManagement(): JSX.Element {
                 type="search"
                 placeholder="Pesquisar EPIs ou funcionários..."
                 className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={ppeManagement.searchTerm}
+                onChange={(e) => ppeManagement.setSearchTerm(e.target.value)}
               />
             </div>
             <DropdownMenu>
@@ -594,7 +396,7 @@ function PPEManagement(): JSX.Element {
             </DropdownMenu>
           </div>
 
-          <Tabs defaultValue="deliveries" onValueChange={setCurrentTab}>
+          <Tabs defaultValue="deliveries" onValueChange={ppeManagement.setCurrentTab}>
             <TabsList className="mb-4">
               <TabsTrigger value="deliveries" className="flex gap-2">
                 <UserCheck className="h-4 w-4" /> Entregas
@@ -650,8 +452,20 @@ function PPEManagement(): JSX.Element {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredDeliveries.length > 0 ? (
-                        filteredDeliveries.map(delivery => (
+                      {ppeManagement.loading ? (
+                        // Mostrar skeleton loader durante o carregamento
+                        Array.from({ length: 5 }).map((_, index) => (
+                          <TableRow key={`skeleton-${index}`}>
+                            <TableCell><div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                            <TableCell><div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                            <TableCell><div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                            <TableCell><div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                            <TableCell><div className="h-5 w-16 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                            <TableCell><div className="h-5 w-16 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                          </TableRow>
+                        ))
+                      ) : ppeManagement.filteredDeliveries.length > 0 ? (
+                        ppeManagement.filteredDeliveries.map(delivery => (
                           <TableRow key={delivery.id}>
                             <TableCell className="font-medium">
                               {delivery.employeeName}
@@ -659,7 +473,7 @@ function PPEManagement(): JSX.Element {
                             <TableCell>{delivery.department}</TableCell>
                             <TableCell>{delivery.ppeName}</TableCell>
                             <TableCell>
-                              {new Date(delivery.issueDate).toLocaleDateString('pt-BR')}
+                              {new Date(delivery.delivery_date).toLocaleDateString('pt-BR')}
                             </TableCell>
 
                             <TableCell>
@@ -681,11 +495,11 @@ function PPEManagement(): JSX.Element {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => handleShowDetails(delivery)}>
+                                  <DropdownMenuItem onClick={() => ppeManagement.handleShowDetails(delivery)}>
                                     <Info className="mr-2 h-4 w-4" />
                                     Detalhes
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleRenewPPE(delivery)}>
+                                  <DropdownMenuItem onClick={() => ppeManagement.handleRenewPPE(delivery)}>
                                     <RefreshCw className="mr-2 h-4 w-4" />
                                     Renovar
                                   </DropdownMenuItem>
@@ -695,7 +509,7 @@ function PPEManagement(): JSX.Element {
                                   </DropdownMenuItem>
                                   <DropdownMenuItem 
                                     className="text-red-500"
-                                    onClick={() => handleDeletePPE(delivery)}
+                                    onClick={() => ppeManagement.handleDeleteDelivery(delivery)}
                                   >
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     Excluir
@@ -731,8 +545,19 @@ function PPEManagement(): JSX.Element {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredItems.length > 0 ? (
-                      filteredItems.map(item => (
+                    {ppeManagement.loading ? (
+                      // Mostrar skeleton loader durante o carregamento
+                      Array.from({ length: 5 }).map((_, index) => (
+                        <tr key={`skeleton-${index}`} className="bg-white border-b">
+                          <td className="px-6 py-4"><div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div></td>
+                          <td className="px-6 py-4"><div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div></td>
+                          <td className="px-6 py-4"><div className="h-4 w-28 bg-gray-200 rounded animate-pulse"></div></td>
+                          <td className="px-6 py-4"><div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div></td>
+                          <td className="px-6 py-4"><div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div></td>
+                        </tr>
+                      ))
+                    ) : ppeManagement.filteredItems.length > 0 ? (
+                      ppeManagement.filteredItems.map(item => (
                         <tr key={item.id} className="bg-white border-b hover:bg-gray-50">
                           <td className="px-6 py-4 font-medium text-gray-900">
                             {item.name}
@@ -748,17 +573,26 @@ function PPEManagement(): JSX.Element {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleEditPPE(item)}>
+                                <DropdownMenuItem onClick={() => {
+                                  ppeManagement.setSelectedPPEItem(item);
+                                  ppeManagement.setIsEditPPEDialogOpen(true);
+                                }}>
                                   <Edit className="mr-2 h-4 w-4" />
                                   Editar
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleViewPPEHistory(item)}>
+                                <DropdownMenuItem onClick={() => {
+                                  ppeManagement.setSelectedPPEItem(item);
+                                  ppeManagement.setIsPPEHistoryDialogOpen(true);
+                                }}>
                                   <History className="mr-2 h-4 w-4" />
                                   Ver Histórico
                                 </DropdownMenuItem>
                                 <DropdownMenuItem 
                                   className="text-red-500"
-                                  onClick={() => handleConfirmDeletePPE(item)}
+                                  onClick={() => {
+                                    ppeManagement.setSelectedPPEItem(item);
+                                    ppeManagement.setIsDeletePPEDialogOpen(true);
+                                  }}
                                 >
                                   <Trash2 className="mr-2 h-4 w-4" />
                                   Excluir
@@ -783,19 +617,20 @@ function PPEManagement(): JSX.Element {
         </CardContent>
       </Card>
 
+      {/* Diálogos de detalhes e ações */}
       <PPEDetailDialog
-        open={detailDialogOpen}
-        onOpenChange={setDetailDialogOpen}
-        delivery={selectedDelivery}
+        open={ppeManagement.detailDialogOpen}
+        onOpenChange={ppeManagement.setDetailDialogOpen}
+        delivery={ppeManagement.selectedDelivery}
       />
 
       <PPERenewalDialog
-        open={renewalDialogOpen}
-        onOpenChange={setRenewalDialogOpen}
-        delivery={selectedDelivery}
+        open={ppeManagement.renewalDialogOpen}
+        onOpenChange={ppeManagement.setRenewalDialogOpen}
+        delivery={ppeManagement.selectedDelivery}
       />
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialog open={ppeManagement.deleteDialogOpen} onOpenChange={ppeManagement.setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
@@ -807,7 +642,7 @@ function PPEManagement(): JSX.Element {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction 
               className="bg-red-600 hover:bg-red-700"
-              onClick={confirmDeletePPE}
+              onClick={ppeManagement.handleConfirmDeleteDelivery}
             >
               Excluir
             </AlertDialogAction>
@@ -815,7 +650,7 @@ function PPEManagement(): JSX.Element {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={isEditPPEDialogOpen} onOpenChange={setIsEditPPEDialogOpen}>
+      <Dialog open={ppeManagement.isEditPPEDialogOpen} onOpenChange={ppeManagement.setIsEditPPEDialogOpen}>
         <DialogContent className="sm:max-w-[625px]">
           <DialogHeader>
             <DialogTitle>Editar EPI</DialogTitle>
@@ -829,7 +664,7 @@ function PPEManagement(): JSX.Element {
                 <label className="block text-sm font-medium mb-1">Nome do EPI</label>
                 <Input 
                   name="edit-ppe-name"
-                  defaultValue={selectedPPEItem?.name || ''}
+                  defaultValue={ppeManagement.selectedPPEItem?.name || ''}
                   placeholder="Ex: Capacete de Segurança"
                 />
               </div>
@@ -837,7 +672,7 @@ function PPEManagement(): JSX.Element {
                 <label className="block text-sm font-medium mb-1">Número do CA</label>
                 <Input 
                   name="edit-ppe-ca"
-                  defaultValue={selectedPPEItem?.ca || ''}
+                  defaultValue={ppeManagement.selectedPPEItem?.ca || ''}
                   placeholder="Ex: CA-12345"
                 />
               </div>
@@ -845,7 +680,7 @@ function PPEManagement(): JSX.Element {
                 <label className="block text-sm font-medium mb-1">Tipo de Proteção</label>
                 <Input 
                   name="edit-ppe-type"
-                  defaultValue={selectedPPEItem?.type || ''}
+                  defaultValue={ppeManagement.selectedPPEItem?.type || ''}
                   placeholder="Ex: Proteção para cabeça"
                 />
               </div>
@@ -854,7 +689,7 @@ function PPEManagement(): JSX.Element {
                 <Input 
                   name="edit-ppe-validity"
                   type="number" 
-                  defaultValue={selectedPPEItem?.validityPeriod.toString() || ''}
+                  defaultValue={ppeManagement.selectedPPEItem?.validityPeriod.toString() || ''}
                   placeholder="Ex: 12"
                 />
               </div>
@@ -862,7 +697,7 @@ function PPEManagement(): JSX.Element {
                 <label className="block text-sm font-medium mb-1">Descrição</label>
                 <Input 
                   name="edit-ppe-description"
-                  defaultValue={selectedPPEItem?.description || ''}
+                  defaultValue={ppeManagement.selectedPPEItem?.description || ''}
                   placeholder="Detalhes adicionais sobre o EPI"
                 />
               </div>
@@ -874,18 +709,50 @@ function PPEManagement(): JSX.Element {
             </DialogClose>
             <Button 
               className="bg-safety-blue hover:bg-safety-blue/90"
-              onClick={handleUpdatePPE}
+              onClick={() => {
+                if (!ppeManagement.selectedPPEItem) return;
+
+                const nameInput = document.querySelector('input[name="edit-ppe-name"]') as HTMLInputElement;
+                const caInput = document.querySelector('input[name="edit-ppe-ca"]') as HTMLInputElement;
+                const typeInput = document.querySelector('input[name="edit-ppe-type"]') as HTMLInputElement;
+                const validityInput = document.querySelector('input[name="edit-ppe-validity"]') as HTMLInputElement;
+                const descriptionInput = document.querySelector('input[name="edit-ppe-description"]') as HTMLInputElement;
+
+                if (!nameInput?.value || !caInput?.value || !typeInput?.value || !validityInput?.value) {
+                  toast({
+                    title: "Erro ao atualizar",
+                    description: "Por favor, preencha todos os campos obrigatórios.",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+
+                const updatedData: Partial<PPEItem> = {
+                  name: nameInput.value,
+                  ca: caInput.value,
+                  type: typeInput.value,
+                  validityPeriod: parseInt(validityInput.value),
+                  description: descriptionInput?.value || ''
+                };
+
+                ppeManagement.handleUpdatePPE(ppeManagement.selectedPPEItem.id, updatedData);
+              }}
+              disabled={ppeManagement.loading}
             >
-              Salvar
+              {ppeManagement.loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando
+                </>
+              ) : 'Salvar'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isPPEHistoryDialogOpen} onOpenChange={setIsPPEHistoryDialogOpen}>
+      <Dialog open={ppeManagement.isPPEHistoryDialogOpen} onOpenChange={ppeManagement.setIsPPEHistoryDialogOpen}>
         <DialogContent className="sm:max-w-[700px]">
           <DialogHeader>
-            <DialogTitle>Histórico de Entregas - {selectedPPEItem?.name}</DialogTitle>
+            <DialogTitle>Histórico de Entregas - {ppeManagement.selectedPPEItem?.name}</DialogTitle>
             <DialogDescription>
               Registro de todas as entregas deste EPI para funcionários.
             </DialogDescription>
@@ -903,14 +770,25 @@ function PPEManagement(): JSX.Element {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {selectedPPEItem && deliveries.filter(d => d.ppeId === selectedPPEItem.id).length > 0 ? (
-                    deliveries
-                      .filter(d => d.ppeId === selectedPPEItem?.id)
+                  {ppeManagement.loading ? (
+                    // Mostrar skeleton loader durante o carregamento
+                    Array.from({ length: 3 }).map((_, index) => (
+                      <TableRow key={`skeleton-history-${index}`}>
+                        <TableCell><div className="h-4 w-28 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                        <TableCell><div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                        <TableCell><div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                        <TableCell><div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                        <TableCell><div className="h-5 w-16 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                      </TableRow>
+                    ))
+                  ) : ppeManagement.selectedPPEItem && ppeManagement.deliveries.filter(d => d.ppe_id === ppeManagement.selectedPPEItem?.id).length > 0 ? (
+                    ppeManagement.deliveries
+                      .filter(d => d.ppe_id === ppeManagement.selectedPPEItem?.id)
                       .map(delivery => (
                         <TableRow key={delivery.id}>
                           <TableCell className="font-medium">{delivery.employeeName}</TableCell>
                           <TableCell>{delivery.department}</TableCell>
-                          <TableCell>{new Date(delivery.issueDate).toLocaleDateString('pt-BR')}</TableCell>
+                          <TableCell>{new Date(delivery.delivery_date).toLocaleDateString('pt-BR')}</TableCell>
                           <TableCell>{new Date(delivery.expiryDate).toLocaleDateString('pt-BR')}</TableCell>
                           <TableCell>
                             {delivery.status === 'valid' && <Badge className="bg-safety-green">Válido</Badge>}
@@ -938,13 +816,13 @@ function PPEManagement(): JSX.Element {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={isDeletePPEDialogOpen} onOpenChange={setIsDeletePPEDialogOpen}>
+      <AlertDialog open={ppeManagement.isDeletePPEDialogOpen} onOpenChange={ppeManagement.setIsDeletePPEDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o EPI "{selectedPPEItem?.name}"? Esta ação não pode ser desfeita.
-              {deliveries.filter(d => d.ppeId === selectedPPEItem?.id).length > 0 && (
+              Tem certeza que deseja excluir o EPI "{ppeManagement.selectedPPEItem?.name}"? Esta ação não pode ser desfeita.
+              {ppeManagement.deliveries.filter(d => d.ppe_id === ppeManagement.selectedPPEItem?.id).length > 0 && (
                 <p className="mt-2 text-red-500">
                   <strong>Atenção:</strong> Existem entregas registradas para este EPI. 
                   Elas também serão excluídas.
@@ -956,9 +834,18 @@ function PPEManagement(): JSX.Element {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction 
               className="bg-red-600 hover:bg-red-700"
-              onClick={confirmDeletePPEItem}
+              onClick={() => {
+                if (ppeManagement.selectedPPEItem) {
+                  ppeManagement.handleDeletePPE(ppeManagement.selectedPPEItem.id);
+                }
+              }}
+              disabled={ppeManagement.loading}
             >
-              Excluir
+              {ppeManagement.loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Excluindo
+                </>
+              ) : 'Excluir'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
