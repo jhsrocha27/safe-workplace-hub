@@ -1,5 +1,8 @@
-import { supabase, TABLES, type Tables } from '../config/supabase';
+import { supabase as supabaseClient, TABLES, type Tables } from '../config/supabase';
 import type { Database } from '../config/database.types';
+
+// Export the supabase client so it can be used directly
+export const supabase = supabaseClient;
 
 type TableName = keyof Database['public']['Tables'];
 type Row<T extends TableName> = Database['public']['Tables'][T]['Row'];

@@ -1,9 +1,9 @@
-
 import { useState } from 'react';
 import { useToast } from './use-toast';
 import { ppeItemService, ppeDeliveryService } from '@/features/ppe/services/ppe-service';
 import { Employee, PPEItem, PPEDelivery } from '@/services/types';
-import { employeesService, supabase } from '@/services/supabase-service';
+import { employeesService } from '@/services/supabase-service';
+import { supabase } from '@/config/supabase'; // Import directly from the config file
 
 export function useSupabase() {
   const { toast } = useToast();

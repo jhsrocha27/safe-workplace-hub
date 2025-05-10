@@ -1,10 +1,10 @@
-
 import { useState } from 'react';
 import { calculatePPEStatus, formatExpiryDate } from '@/utils/ppe-status';
 import { useToast } from "@/hooks/use-toast";
 import { usePPEForm } from '@/hooks/use-ppe-form';
 import { useEmployees } from '@/hooks/use-employees';
 import { usePPEManagement } from '@/features/ppe/hooks/use-ppe-management';
+import { PPEItem } from '@/services/types'; // Keep this import for PPEItem type
 import {
   Card,
   CardContent,
@@ -67,7 +67,6 @@ import { PPERenewalDialog } from '@/components/ppe/PPERenewalDialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useQuery } from '@tanstack/react-query';
 import { ppeItemService } from '@/features/ppe/services/ppe-service';
-import { PPEItem } from '@/services/types'; // Add the import for PPEItem type
 
 function PPEManagement(): JSX.Element {
   // Usando o hook customizado para gestão de EPIs

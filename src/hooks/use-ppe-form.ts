@@ -53,14 +53,14 @@ interface PPEFormState {
   validity_period: number;
   employeeName: string;
   ppeName: string;
-  delivery_date: string; // Changed from issueDate to delivery_date
+  delivery_date: string; // This should be delivery_date, not issueDate
   expiryDate: string;
   observations: string;
   isValid: boolean;
   errors: {
     employeeName?: string;
     ppeName?: string;
-    delivery_date?: string; // Changed from issueDate to delivery_date
+    delivery_date?: string; // This should match the property name above
     expiryDate?: string;
     name?: string;
     ca?: string;
