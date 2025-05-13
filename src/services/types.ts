@@ -1,3 +1,4 @@
+
 // Definição dos tipos base para o sistema
 
 export interface Employee {
@@ -16,6 +17,7 @@ export interface PPE {
   ca_number: string;
   validity_date: string;
   quantity: number;
+  description?: string; // Added description property as optional
   created_at?: string;
 }
 
