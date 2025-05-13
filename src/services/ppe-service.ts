@@ -80,7 +80,7 @@ export const ppeItemService = {
       name: ppeItem.name ?? currentPPE.name,
       type: ppeItem.type ?? currentPPE.type,
       ca_number: ppeItem.ca ?? currentPPE.ca_number,
-      description: ppeItem.description ?? currentPPE.description,
+      description: ppeItem.description ?? currentPPE.description || '',
       validity_date: ppeItem.validityPeriod
         ? new Date(Date.now() + ppeItem.validityPeriod).toISOString()
         : currentPPE.validity_date
