@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import {
   ToastActionElement,
@@ -145,10 +146,10 @@ function dispatch(action: Action) {
 // Define input props type without causing circular reference
 type ToastInputProps = Omit<ToasterToast, "id">;
 
-function toast({ ...props }: ToastInputProps) {
+function toast(props: ToastInputProps) {
   const id = genId();
 
-  const update = (props: ToasterToast) =>
+  const update = (props: Partial<ToasterToast>) =>
     dispatch({
       type: actionTypes.UPDATE_TOAST,
       toast: { ...props, id },
@@ -159,7 +160,6 @@ function toast({ ...props }: ToastInputProps) {
     type: actionTypes.ADD_TOAST,
     toast: {
       ...props,
-      id,
       open: true,
       onOpenChange: (open) => {
         if (!open) dismiss();

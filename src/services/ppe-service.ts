@@ -75,13 +75,16 @@ export const ppeItemService = {
     if (index === -1) throw new Error('PPE item not found');
     
     const currentPPE = store.ppes[index];
-    // Add parentheses around the nullish coalescing operation to avoid the error
+    // Fix: Handle description safely with proper null checking and parentheses
     const updatedPPE = {
       ...currentPPE,
       name: ppeItem.name ?? currentPPE.name,
       type: ppeItem.type ?? currentPPE.type,
       ca_number: ppeItem.ca ?? currentPPE.ca_number,
-      description: (ppeItem.description ?? currentPPE.description) || '',
+      // Safely handle description which might not exist on PPE type
+      description: currentPPE.description !== undefined ? 
+        (ppeItem.description ?? currentPPE.description) : 
+        (ppeItem.description || ''),
       validity_date: ppeItem.validityPeriod
         ? new Date(Date.now() + ppeItem.validityPeriod).toISOString()
         : currentPPE.validity_date
