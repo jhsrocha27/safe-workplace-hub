@@ -69,6 +69,14 @@ export const PPEDeliveryDialog: React.FC<PPEDeliveryDialogProps> = ({
       selectedPPE.validityPeriod
     ).status;
 
+    console.log("Preparando dados para salvar entrega de EPI:", {
+      employee: selectedEmployee,
+      ppe: selectedPPE,
+      delivery_date: formData.delivery_date,
+      expiryDate: expiryDateStr,
+      status
+    });
+
     // Prepare os dados da entrega
     const deliveryData = {
       employee_id: selectedEmployee.id,
@@ -81,9 +89,14 @@ export const PPEDeliveryDialog: React.FC<PPEDeliveryDialogProps> = ({
       expiryDate: expiryDateStr,
       quantity: 1,
       status,
-      signature: false
+      signature: false,
+      // Adicionando campos para compatibilidade
+      employeeId: selectedEmployee.id,
+      ppeId: selectedPPE.id,
+      issueDate: formData.delivery_date
     };
 
+    console.log("Enviando dados de entrega:", deliveryData);
     handleSaveDelivery(deliveryData);
   };
 

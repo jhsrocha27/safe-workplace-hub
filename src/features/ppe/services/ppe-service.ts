@@ -36,7 +36,10 @@ const convertToPPEDelivery = (delivery: any): PPEDelivery => ({
   quantity: delivery.quantity || 1,
   status: delivery.status,
   signature: delivery.signature,
-  created_at: delivery.created_at
+  created_at: delivery.created_at,
+  employeeId: delivery.employee_id,
+  ppeId: delivery.ppe_id,
+  issueDate: delivery.delivery_date
 });
 
 const convertFromPPEDelivery = (delivery: Omit<PPEDelivery, 'id' | 'created_at'>) => ({
@@ -141,7 +144,9 @@ export const ppeDeliveryService = {
   async create(delivery: Omit<PPEDelivery, 'id' | 'created_at'>): Promise<PPEDelivery> {
     try {
       const deliveryData = convertFromPPEDelivery(delivery);
+      console.log('Enviando dados para criar entrega:', deliveryData);
       const response = await ppeDeliveriesService.create(deliveryData);
+      console.log('Resposta da criação de entrega:', response);
       return convertToPPEDelivery(response);
     } catch (error) {
       console.error('Erro ao criar entrega de EPI:', error);

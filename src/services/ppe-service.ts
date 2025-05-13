@@ -1,3 +1,4 @@
+
 import { Employee, PPEItem, PPEDelivery } from './types';
 import { store } from './data-service';
 import { ppeData, ppeDeliveryData } from './mock-data';
@@ -9,7 +10,7 @@ const convertPPEtoPPEItem = (ppe: any): PPEItem => ({
   ca: ppe.ca_number,
   type: ppe.type,
   validityPeriod: new Date(ppe.validity_date).getTime() - new Date().getTime(),
-  description: '',
+  description: ppe.description || '',
   created_at: ppe.created_at || new Date().toISOString()
 });
 
@@ -62,6 +63,7 @@ export const ppeItemService = {
       ca_number: ppeItem.ca,
       validity_date: new Date(Date.now() + ppeItem.validityPeriod).toISOString(),
       quantity: 0,
+      description: ppeItem.description || '',
       created_at: new Date().toISOString()
     };
     store.ppes.push(newPPE);
@@ -78,6 +80,7 @@ export const ppeItemService = {
       name: ppeItem.name ?? currentPPE.name,
       type: ppeItem.type ?? currentPPE.type,
       ca_number: ppeItem.ca ?? currentPPE.ca_number,
+      description: ppeItem.description ?? currentPPE.description,
       validity_date: ppeItem.validityPeriod
         ? new Date(Date.now() + ppeItem.validityPeriod).toISOString()
         : currentPPE.validity_date
@@ -106,7 +109,10 @@ export const ppeDeliveryService = {
     return store.ppeDeliveries.map(delivery => ({
       ...delivery,
       employee: store.employees.find(emp => emp.id === delivery.employee_id),
-      ppe: convertPPEtoPPEItem(store.ppes.find(ppe => ppe.id === delivery.ppe_id))
+      ppe: convertPPEtoPPEItem(store.ppes.find(ppe => ppe.id === delivery.ppe_id)),
+      employeeId: delivery.employee_id,
+      ppeId: delivery.ppe_id,
+      issueDate: delivery.delivery_date
     }));
   },
 
@@ -117,14 +123,24 @@ export const ppeDeliveryService = {
       created_at: new Date().toISOString()
     };
     store.ppeDeliveries.push(newDelivery);
-    return newDelivery;
+    return {
+      ...newDelivery,
+      employeeId: newDelivery.employee_id,
+      ppeId: newDelivery.ppe_id,
+      issueDate: newDelivery.delivery_date
+    };
   },
 
   async update(id: number, delivery: Partial<PPEDelivery>): Promise<PPEDelivery> {
     const index = store.ppeDeliveries.findIndex(del => del.id === id);
     if (index === -1) throw new Error('Delivery not found');
     store.ppeDeliveries[index] = { ...store.ppeDeliveries[index], ...delivery };
-    return store.ppeDeliveries[index];
+    return {
+      ...store.ppeDeliveries[index],
+      employeeId: store.ppeDeliveries[index].employee_id,
+      ppeId: store.ppeDeliveries[index].ppe_id,
+      issueDate: store.ppeDeliveries[index].delivery_date
+    };
   },
 
   async delete(id: number): Promise<void> {
@@ -138,7 +154,10 @@ export const ppeDeliveryService = {
       .filter(delivery => delivery.employee_id === employeeId)
       .map(delivery => ({
         ...delivery,
-        ppe: convertPPEtoPPEItem(store.ppes.find(ppe => ppe.id === delivery.ppe_id))
+        ppe: convertPPEtoPPEItem(store.ppes.find(ppe => ppe.id === delivery.ppe_id)),
+        employeeId: delivery.employee_id,
+        ppeId: delivery.ppe_id,
+        issueDate: delivery.delivery_date
       }));
   }
 };
