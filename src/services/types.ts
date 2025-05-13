@@ -16,6 +16,7 @@ export interface PPE {
   type: string;
   ca_number: string;
   validity_date: string;
+  validity_period_months?: number;
   quantity: number;
   description?: string;
   created_at?: string;
