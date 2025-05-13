@@ -1,4 +1,3 @@
-
 import { ppesService, ppeDeliveriesService } from '@/services/supabase-service';
 import type { PPEItem, PPEDelivery } from '@/services/types';
 
@@ -81,6 +80,7 @@ export const ppeItemService = {
   async create(ppeItem: Omit<PPEItem, 'id' | 'created_at'>): Promise<PPEItem> {
     try {
       const ppeData = convertFromPPEItem(ppeItem);
+      console.log('Enviando dados para criar EPI:', ppeData);
       const response = await ppesService.create(ppeData);
       return convertToPPEItem(response);
     } catch (error) {

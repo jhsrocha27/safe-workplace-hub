@@ -12,6 +12,7 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import { usePPEForm } from '@/hooks/use-ppe-form';
+import { useToast } from "@/hooks/use-toast";
 
 interface PPENewDialogProps {
   formData: ReturnType<typeof usePPEForm>['formData'];
@@ -26,6 +27,20 @@ export const PPENewDialog: React.FC<PPENewDialogProps> = ({
   handleSavePPE,
   loading
 }) => {
+  const { toast } = useToast();
+  
+  const onSaveClick = () => {
+    if (!formData.name || !formData.ca || !formData.type || !formData.validity_period) {
+      toast({
+        title: "Erro ao salvar",
+        description: "Por favor, preencha todos os campos obrigatórios.",
+        variant: "destructive"
+      });
+      return;
+    }
+    handleSavePPE();
+  };
+  
   return (
     <DialogContent className="sm:max-w-[625px]">
       <DialogHeader>
@@ -85,7 +100,7 @@ export const PPENewDialog: React.FC<PPENewDialogProps> = ({
         </DialogClose>
         <Button 
           className="bg-safety-blue hover:bg-safety-blue/90"
-          onClick={handleSavePPE}
+          onClick={onSaveClick}
           disabled={loading}
         >
           {loading ? (
