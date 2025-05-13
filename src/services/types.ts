@@ -17,7 +17,7 @@ export interface PPE {
   ca_number: string;
   validity_date: string;
   quantity: number;
-  description?: string; // Added description property as optional
+  description?: string;
   created_at?: string;
 }
 

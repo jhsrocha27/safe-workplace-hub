@@ -88,7 +88,7 @@ export const PPENewDialog: React.FC<PPENewDialogProps> = ({
             <label className="block text-sm font-medium mb-1">Descrição</label>
             <Input 
               placeholder="Detalhes adicionais sobre o EPI" 
-              value={formData.description}
+              value={formData.description || ''}
               onChange={(e) => setField('description', e.target.value)}
             />
           </div>
