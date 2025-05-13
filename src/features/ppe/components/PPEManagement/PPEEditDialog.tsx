@@ -95,7 +95,7 @@ export const PPEEditDialog: React.FC<PPEEditDialogProps> = ({
             <Input 
               name="edit-ppe-validity"
               type="number" 
-              defaultValue={selectedPPEItem?.validityPeriod.toString() || ''}
+              defaultValue={selectedPPEItem?.validityPeriod ? selectedPPEItem.validityPeriod.toString() : ''}
               placeholder="Ex: 12"
             />
           </div>
