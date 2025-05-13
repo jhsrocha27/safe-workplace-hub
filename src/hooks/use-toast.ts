@@ -1,13 +1,13 @@
-
 import * as React from "react";
 import {
   ToastActionElement,
-  ToastProps,
+  ToastProps as RadixToastProps,
 } from "@/components/ui/toast";
 
 const TOAST_LIMIT = 20;
 const TOAST_REMOVE_DELAY = 1000000;
 
+// Define a base toast type
 type BaseToast = {
   id: string;
   title?: React.ReactNode;
@@ -15,7 +15,8 @@ type BaseToast = {
   action?: ToastActionElement;
 };
 
-type ToasterToast = BaseToast & ToastProps;
+// Use the imported RadixToastProps to avoid naming collision
+type ToasterToast = BaseToast & RadixToastProps;
 
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
@@ -141,9 +142,10 @@ function dispatch(action: Action) {
   });
 }
 
-type ToastProps = Omit<ToasterToast, "id">;
+// Define input props type without causing circular reference
+type ToastInputProps = Omit<ToasterToast, "id">;
 
-function toast({ ...props }: ToastProps) {
+function toast({ ...props }: ToastInputProps) {
   const id = genId();
 
   const update = (props: ToasterToast) =>
