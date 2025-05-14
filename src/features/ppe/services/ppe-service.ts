@@ -1,4 +1,3 @@
-
 import { storageService } from '@/services/storage-service';
 import type { PPEItem, PPEDelivery } from '@/services/types';
 
@@ -36,7 +35,10 @@ const convertToPPEDelivery = (delivery: any): PPEDelivery => ({
   quantity: delivery.quantity || 1,
   status: delivery.status,
   signature: delivery.signature,
-  created_at: delivery.created_at
+  created_at: delivery.created_at,
+  employeeId: delivery.employee_id,
+  ppeId: delivery.ppe_id,
+  issueDate: delivery.delivery_date
 });
 
 const convertFromPPEDelivery = (delivery: Omit<PPEDelivery, 'id' | 'created_at'>) => ({
