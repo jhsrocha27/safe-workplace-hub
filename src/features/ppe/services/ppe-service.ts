@@ -1,5 +1,5 @@
 
-import { ppesService, ppeDeliveriesService } from '@/services/supabase-service';
+import { storageService } from '@/services/storage-service';
 import type { PPEItem, PPEDelivery } from '@/services/types';
 
 // Funções auxiliares para converter entre formatos
@@ -18,7 +18,7 @@ const convertFromPPEItem = (ppe: Omit<PPEItem, 'id' | 'created_at'>) => ({
   ca_number: ppe.ca,
   type: ppe.type,
   validity_period_months: ppe.validityPeriod,
-  description: ppe.description || '',
+  description: ppe.description,
   validity_date: new Date(Date.now() + ppe.validityPeriod * 30 * 24 * 60 * 60 * 1000).toISOString(),
   quantity: 0
 });
@@ -56,8 +56,8 @@ const convertFromPPEDelivery = (delivery: Omit<PPEDelivery, 'id' | 'created_at'>
 export const ppeItemService = {
   async getAll(): Promise<PPEItem[]> {
     try {
-      const response = await ppesService.getAll();
-      return response.map(convertToPPEItem);
+      const response = await storageService.getAll('ppes');
+      return response;
     } catch (error) {
       console.error('Erro ao buscar EPIs:', error);
       throw error;
@@ -66,9 +66,9 @@ export const ppeItemService = {
 
   async getById(id: number): Promise<PPEItem> {
     try {
-      const response = await ppesService.getById(id);
+      const response = await storageService.getById('ppes', id);
       if (!response) throw new Error('EPI não encontrado');
-      return convertToPPEItem(response);
+      return response;
     } catch (error) {
       console.error(`Erro ao buscar EPI com ID ${id}:`, error);
       throw error;
@@ -77,9 +77,7 @@ export const ppeItemService = {
 
   async create(ppeItem: Omit<PPEItem, 'id' | 'created_at'>): Promise<PPEItem> {
     try {
-      const ppeData = convertFromPPEItem(ppeItem);
-      const response = await ppesService.create(ppeData);
-      return convertToPPEItem(response);
+      return await storageService.create('ppes', ppeItem);
     } catch (error) {
       console.error('Erro ao criar EPI:', error);
       throw error;
@@ -88,18 +86,7 @@ export const ppeItemService = {
 
   async update(id: number, ppeItem: Partial<PPEItem>): Promise<PPEItem> {
     try {
-      const updateData: any = {};
-      if (ppeItem.name) updateData.name = ppeItem.name;
-      if (ppeItem.ca) updateData.ca_number = ppeItem.ca;
-      if (ppeItem.type) updateData.type = ppeItem.type;
-      if (ppeItem.validityPeriod) {
-        updateData.validity_period_months = ppeItem.validityPeriod;
-        updateData.validity_date = new Date(Date.now() + ppeItem.validityPeriod * 30 * 24 * 60 * 60 * 1000).toISOString();
-      }
-      if (ppeItem.description !== undefined) updateData.description = ppeItem.description;
-      
-      const response = await ppesService.update(id, updateData);
-      return convertToPPEItem(response);
+      return await storageService.update('ppes', id, ppeItem);
     } catch (error) {
       console.error(`Erro ao atualizar EPI com ID ${id}:`, error);
       throw error;
@@ -108,7 +95,7 @@ export const ppeItemService = {
 
   async delete(id: number): Promise<void> {
     try {
-      await ppesService.delete(id);
+      await storageService.delete('ppes', id);
     } catch (error) {
       console.error(`Erro ao excluir EPI com ID ${id}:`, error);
       throw error;
@@ -119,8 +106,8 @@ export const ppeItemService = {
 export const ppeDeliveryService = {
   async getAll(): Promise<PPEDelivery[]> {
     try {
-      const response = await ppeDeliveriesService.getAll();
-      return response.map(convertToPPEDelivery);
+      const response = await storageService.getAll('ppe_deliveries');
+      return response;
     } catch (error) {
       console.error('Erro ao buscar entregas de EPIs:', error);
       throw error;
@@ -129,9 +116,9 @@ export const ppeDeliveryService = {
 
   async getById(id: number): Promise<PPEDelivery> {
     try {
-      const response = await ppeDeliveriesService.getById(id);
+      const response = await storageService.getById('ppe_deliveries', id);
       if (!response) throw new Error('Entrega não encontrada');
-      return convertToPPEDelivery(response);
+      return response;
     } catch (error) {
       console.error(`Erro ao buscar entrega com ID ${id}:`, error);
       throw error;
@@ -140,9 +127,7 @@ export const ppeDeliveryService = {
 
   async create(delivery: Omit<PPEDelivery, 'id' | 'created_at'>): Promise<PPEDelivery> {
     try {
-      const deliveryData = convertFromPPEDelivery(delivery);
-      const response = await ppeDeliveriesService.create(deliveryData);
-      return convertToPPEDelivery(response);
+      return await storageService.create('ppe_deliveries', delivery);
     } catch (error) {
       console.error('Erro ao criar entrega de EPI:', error);
       throw error;
@@ -151,20 +136,7 @@ export const ppeDeliveryService = {
 
   async update(id: number, delivery: Partial<PPEDelivery>): Promise<PPEDelivery> {
     try {
-      const updateData: any = {};
-      if (delivery.employee_id) updateData.employee_id = delivery.employee_id;
-      if (delivery.employeeName) updateData.employeeName = delivery.employeeName;
-      if (delivery.position) updateData.position = delivery.position;
-      if (delivery.department) updateData.department = delivery.department;
-      if (delivery.ppe_id) updateData.ppe_id = delivery.ppe_id;
-      if (delivery.ppeName) updateData.ppeName = delivery.ppeName;
-      if (delivery.delivery_date) updateData.delivery_date = delivery.delivery_date;
-      if (delivery.expiryDate) updateData.expiryDate = delivery.expiryDate;
-      if (delivery.status) updateData.status = delivery.status;
-      if (delivery.signature !== undefined) updateData.signature = delivery.signature;
-      
-      const response = await ppeDeliveriesService.update(id, updateData);
-      return convertToPPEDelivery(response);
+      return await storageService.update('ppe_deliveries', id, delivery);
     } catch (error) {
       console.error(`Erro ao atualizar entrega com ID ${id}:`, error);
       throw error;
@@ -173,7 +145,7 @@ export const ppeDeliveryService = {
 
   async delete(id: number): Promise<void> {
     try {
-      await ppeDeliveriesService.delete(id);
+      await storageService.delete('ppe_deliveries', id);
     } catch (error) {
       console.error(`Erro ao excluir entrega com ID ${id}:`, error);
       throw error;

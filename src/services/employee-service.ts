@@ -1,40 +1,30 @@
 import { Employee } from './types';
-import { employeesService } from './supabase-service';
+import { storageService } from './storage-service';
 
 export const employeeService = {
   async getAll(): Promise<Employee[]> {
-    return employeesService.getAll();
+    return storageService.getAll('employees');
   },
 
   async create(employee: Omit<Employee, 'id' | 'created_at'>): Promise<Employee> {
-    return employeesService.create(employee);
+    return storageService.create('employees', employee);
   },
 
   async update(id: number, employee: Partial<Employee>): Promise<Employee> {
-    return employeesService.update(id, employee);
+    return storageService.update('employees', id, employee);
   },
 
   async delete(id: number): Promise<void> {
-    return employeesService.delete(id);
+    return storageService.delete('employees', id);
   },
 
   async getByDepartment(department: string): Promise<Employee[]> {
-    const query = await employeesService.query();
-    const { data, error } = await query
-      .select('*')
-      .eq('department', department);
-    
-    if (error) throw error;
-    return data;
+    const employees = await storageService.getAll('employees');
+    return employees.filter(emp => emp.department === department);
   },
 
   async getByStatus(status: string): Promise<Employee[]> {
-    const query = await employeesService.query();
-    const { data, error } = await query
-      .select('*')
-      .eq('status', status);
-    
-    if (error) throw error;
-    return data;
+    const employees = await storageService.getAll('employees');
+    return employees.filter(emp => emp.status === status);
   }
 };

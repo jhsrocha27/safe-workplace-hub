@@ -60,7 +60,9 @@ export const ppeItemService = {
       name: ppeItem.name,
       type: ppeItem.type,
       ca_number: ppeItem.ca,
-      validity_date: new Date(Date.now() + ppeItem.validityPeriod).toISOString(),
+      validity_period_months: ppeItem.validityPeriod,
+      description: ppeItem.description || '',
+      validity_date: new Date(Date.now() + (ppeItem.validityPeriod * 30 * 24 * 60 * 60 * 1000)).toISOString(),
       quantity: 0,
       created_at: new Date().toISOString()
     };

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Employee } from '@/services/types';
-import { employeeService } from '@/services/employee-service';
-import { supabase } from '@/config/supabase';
+import { employeesService } from '@/services/storage-service';
 
 export function useEmployees() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -13,25 +12,13 @@ export function useEmployees() {
     loadEmployees();
     
     // Inscrever para atualizações em tempo real
-    const channel = supabase
-      .channel('employee-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'employees'
-        },
-        (payload) => {
-          // Atualizar a lista de funcionários quando houver mudanças
-          loadEmployees();
-        }
-      )
-      .subscribe();
+    const unsubscribe = employeesService.subscribe(() => {
+      loadEmployees();
+    });
 
     // Limpar inscrição quando o componente for desmontado
     return () => {
-      channel.unsubscribe();
+      unsubscribe();
     };
   }, []);
 
@@ -39,7 +26,7 @@ export function useEmployees() {
   const loadEmployees = async () => {
     try {
       setLoading(true);
-      const data = await employeeService.getAll();
+      const data = await employeesService.getAll();
       setEmployees(data);
       setError(null);
     } catch (err) {
@@ -52,7 +39,7 @@ export function useEmployees() {
   // Função para adicionar funcionário
   const addEmployee = async (employee: Omit<Employee, 'id' | 'created_at'>) => {
     try {
-      const newEmployee = await employeeService.create(employee);
+      const newEmployee = await employeesService.create(employee);
       setEmployees([...employees, newEmployee]);
       return newEmployee;
     } catch (err) {
@@ -63,7 +50,7 @@ export function useEmployees() {
   // Função para atualizar funcionário
   const updateEmployee = async (id: number, employee: Partial<Employee>) => {
     try {
-      const updatedEmployee = await employeeService.update(id, employee);
+      const updatedEmployee = await employeesService.update(id, employee);
       setEmployees(employees.map(emp => emp.id === id ? updatedEmployee : emp));
       return updatedEmployee;
     } catch (err) {
@@ -74,7 +61,7 @@ export function useEmployees() {
   // Função para deletar funcionário
   const deleteEmployee = async (id: number) => {
     try {
-      await employeeService.delete(id);
+      await employeesService.delete(id);
       setEmployees(employees.filter(emp => emp.id !== id));
     } catch (err) {
       throw err instanceof Error ? err : new Error('Erro ao deletar funcionário');
