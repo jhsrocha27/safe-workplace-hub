@@ -33,10 +33,6 @@ export function EditInspectionDialog({ inspection, onUpdate, onDelete }: EditIns
   const handleUpdate = () => {
     onUpdate(inspection.id, { date, status });
     setIsOpen(false);
-    toast({
-      title: 'Inspeção atualizada',
-      description: 'As alterações foram salvas com sucesso.',
-    });
   };
 
   const handleDelete = () => {

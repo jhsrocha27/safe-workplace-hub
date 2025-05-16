@@ -277,6 +277,7 @@ const Accidents: React.FC = () => {
   };
 
   const handleSaveRecord = () => {
+      // Removida notificação de sucesso ao registrar acidente/quase-acidente
     if (newRecord.type === 'accident') {
       const newAccident: Accident = {
         id: registeredAccidents.length + 1,

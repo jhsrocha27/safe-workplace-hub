@@ -224,10 +224,7 @@ export default function Inspections() {
         : inspection
     );
     setInspections(updatedInspections);
-    toast({
-      title: "Relatório salvo",
-      description: "O relatório da inspeção foi salvo com sucesso."
-    });
+    // Removida notificação de sucesso ao salvar relatório
   };
 
   // Handler for updating inspection
@@ -238,20 +235,14 @@ export default function Inspections() {
         : inspection
     );
     setInspections(updatedInspections);
-    toast({
-      title: "Inspeção atualizada",
-      description: "As alterações foram salvas com sucesso."
-    });
+    // Removida notificação de sucesso ao atualizar inspeção
   };
 
   // Handler for deleting inspection
   const handleDeleteInspection = (id: string) => {
     const updatedInspections = inspections.filter(inspection => inspection.id !== id);
     setInspections(updatedInspections);
-    toast({
-      title: "Inspeção removida",
-      description: "A inspeção foi removida com sucesso."
-    });
+    // Removida notificação de sucesso ao remover inspeção
   };
 
   // Handler for creating a new inspection
@@ -281,10 +272,7 @@ export default function Inspections() {
     setInspections([createdInspection, ...inspections]);
     setIsNewInspectionOpen(false);
     
-    toast({
-      title: "Inspeção criada",
-      description: "A nova inspeção foi criada com sucesso.",
-    });
+    // Removida notificação de sucesso ao criar inspeção
     
     // Reset form
     setNewInspection({
