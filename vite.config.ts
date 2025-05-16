@@ -8,6 +8,15 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    fs: {
+      strict: true,
+      allow: [
+        'src',
+        'public',
+        'node_modules',
+      ],
+      deny: ['.*'],
+    },
   },
   plugins: [
     react(),
